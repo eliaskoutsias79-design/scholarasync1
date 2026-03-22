@@ -5,49 +5,63 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
 import "./styles.css";
 
-const ADMIN_EMAIL = "your-admin-email@gmail.com"; // Change to your admin email
+const ADMIN_EMAIL = "your-admin-email@gmail.com"; 
 
 function App({ session }) {
   const [view, setView] = useState("calendar");
   const [events, setEvents] = useState([]);
   const [profile, setProfile] = useState(null);
-  const [announcement, setAnnouncement] = useState("Welcome to ScholarAsync!");
+  const [loading, setLoading] = useState(true); // SAFETY GUARD
+  const [announcement] = useState("Welcome to ScholarAsync! 🚀");
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
-    fetchProfile();
-    fetchEvents();
-  }, []);
+    if (session?.user?.id) {
+      initializeApp();
+    }
+  }, [session]);
+
+  async function initializeApp() {
+    setLoading(true);
+    await Promise.all([fetchProfile(), fetchEvents()]);
+    setLoading(false);
+  }
 
   async function fetchProfile() {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
-    setProfile(data);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+      if (data) setProfile(data);
+    } catch (e) { console.error("Profile error:", e); }
   }
 
   async function fetchEvents() {
-    const { data } = await supabase.from("homework").select("*");
-    const formatted = data.map((h) => ({
-      id: h.id,
-      title: `[${h.subject}] ${h.title}`,
-      start: h.due_date,
-      description: h.description,
-      subject: h.subject,
-      color: h.subject === "Math" ? "#6366f1" : "#ef4444",
-    }));
-    setEvents(formatted);
+    try {
+      const { data } = await supabase.from("homework").select("*");
+      if (!data) return; // CRASH PREVENTION
+
+      const formatted = data.map((h) => ({
+        id: h.id,
+        title: `[${h.subject}] ${h.title}`,
+        start: h.due_date,
+        description: h.description,
+        subject: h.subject,
+        color: h.subject === "Math" ? "#6366f1" : "#ef4444",
+        extendedProps: { description: h.description }
+      }));
+      setEvents(formatted);
+    } catch (e) { console.error("Events error:", e); }
   }
 
   const handleDateClick = (arg) => {
     if (session.user.email === ADMIN_EMAIL) {
       const title = prompt("Task Title:");
       const subject = prompt("Subject (Math, History, etc.):");
-      if (title) {
-        saveEvent({ title, subject, due_date: arg.dateStr });
-      }
+      const description = prompt("Description:");
+      if (title) saveEvent({ title, subject, description, due_date: arg.dateStr });
     }
   };
 
@@ -56,6 +70,8 @@ function App({ session }) {
     fetchEvents();
   }
 
+  if (loading) return <div className="loading-screen">✨ Lighting the Fire...</div>;
+
   return (
     <div className="dashboard-layout">
       {/* SIDEBAR / MOBILE DOCK */}
@@ -63,37 +79,21 @@ function App({ session }) {
         <div className="logo">ScholarAsync</div>
 
         <nav>
-          <button 
-            className={view === "calendar" ? "active" : ""} 
-            onClick={() => setView("calendar")}
-          >
+          <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}>
             <span>📅</span>
             <span className="desktop-only">Calendar</span>
           </button>
-          
-          <button 
-            className={view === "list" ? "active" : ""} 
-            onClick={() => setView("list")}
-          >
+          <button className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
             <span>📝</span>
             <span className="desktop-only">All Tasks</span>
           </button>
-
-          {session.user.email === ADMIN_EMAIL && (
-            <button 
-              className={view === "admin" ? "active" : ""} 
-              onClick={() => setView("admin")}
-            >
-              <span>🛡️</span>
-              <span className="desktop-only">Admin Panel</span>
-            </button>
-          )}
         </nav>
 
-        {/* MATERIAL INFO & SIGN OUT */}
         <div className="user-tag">
-          <small className="desktop-only">{profile?.role?.toUpperCase() || "USER"}</small>
-          <p className="desktop-only">{profile?.user_class || "Scholar"}</p>
+          <div className="desktop-only">
+            <small>{profile?.role?.toUpperCase() || "STUDENT"}</small>
+            <p>{profile?.user_class || "Junior High A1"}</p>
+          </div>
           <button className="logout-lite" onClick={() => supabase.auth.signOut()}>
             <span className="mobile-only">🚪</span>
             <span className="desktop-only">Sign Out</span>
@@ -121,30 +121,19 @@ function App({ session }) {
           </div>
         )}
 
-        {view === "list" && (
-          <div className="task-list animate-in">
-             <h2>Upcoming Tasks</h2>
-             {events.map(event => (
-               <div key={event.id} className="task-item" onClick={() => setSelectedEvent(event)}>
-                 <div>
-                   <strong>{event.title}</strong>
-                   <p>{event.start}</p>
-                 </div>
-                 <span>➡️</span>
-               </div>
-             ))}
-          </div>
-        )}
-
-        {/* ASSIGNMENT DETAILS MODAL */}
+        {/* MODAL (ALWAYS ON TOP) */}
         {selectedEvent && (
           <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h3>{selectedEvent.title}</h3>
-              <p><strong>Due:</strong> {selectedEvent.startStr || selectedEvent.start}</p>
-              <hr />
-              <p>{selectedEvent.extendedProps?.description || "No additional details provided."}</p>
-              <button className="prio-btn" onClick={() => setSelectedEvent(null)}>Close</button>
+              <div className="modal-header">
+                <h3>{selectedEvent.title}</h3>
+                <button className="close-x" onClick={() => setSelectedEvent(null)}>×</button>
+              </div>
+              <p className="due-tag">📅 Due: {selectedEvent.startStr || selectedEvent.start}</p>
+              <div className="modal-body">
+                {selectedEvent.extendedProps?.description || "No extra details provided."}
+              </div>
+              <button className="prio-btn" onClick={() => setSelectedEvent(null)}>Got it!</button>
             </div>
           </div>
         )}
