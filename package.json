@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview"
   },
- "dependencies": {
+  "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "@supabase/supabase-js": "^2.39.0",
@@ -17,10 +17,7 @@
     "@fullcalendar/interaction": "^6.1.10",
     "@fullcalendar/core": "^6.1.10"
   },
-  },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.1",
     "vite": "^5.0.0"
   }
