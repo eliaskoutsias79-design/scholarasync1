@@ -29,14 +29,12 @@ export default function App() {
     email: "", password: "", role: "student", userClass: "Junior High A1",
     teacherClasses: "", teacherSubjects: "",
   });
-  const [tempSettings, setTempSettings] = useState({ classes: "", subjects: "", userClass: "" });
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [newHW, setNewHW] = useState({ title: "", subject: "", className: "", type: "Homework" });
+  const [newHW, setNewHW] = useState({ title: "", subject: "", type: "Homework" });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -65,7 +63,6 @@ export default function App() {
   };
 
   const fetchTopAnnouncements = async (prof) => {
-    // Fetches the 3 most recent posts to show in the "News" ticker
     const { data } = await supabase.from("assignments")
       .select("*")
       .eq("class_name", prof.user_class)
@@ -84,13 +81,12 @@ export default function App() {
     const { data } = await query;
     if (data) {
       setEvents(data.map(ev => {
-        // AUTOMATIC COLOR CODING
         const sub = ev.subject.toLowerCase();
-        let color = "#64748b"; // Default Slate
-        if (sub.includes("math") || sub.includes("μαθ")) color = "#3b82f6"; // Blue
-        if (sub.includes("hist") || sub.includes("ιστ")) color = "#ef4444"; // Red
-        if (sub.includes("phys") || sub.includes("φυσ")) color = "#10b981"; // Green
-        if (sub.includes("anc") || sub.includes("αρχ")) color = "#8b5cf6"; // Purple
+        let color = "#64748b"; 
+        if (sub.includes("math") || sub.includes("μαθ")) color = "#3b82f6";
+        if (sub.includes("hist") || sub.includes("ιστ")) color = "#ef4444";
+        if (sub.includes("phys") || sub.includes("φυσ")) color = "#10b981";
+        if (sub.includes("anc") || sub.includes("αρχ")) color = "#8b5cf6";
 
         return {
           id: ev.id,
@@ -108,10 +104,7 @@ export default function App() {
     const { email, password, role, userClass, teacherClasses, teacherSubjects } = authData;
     const { data, error } = authMode === "login"
       ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({
-          email, password,
-          options: { data: { role, userClass } },
-        });
+      : await supabase.auth.signUp({ email, password });
 
     if (error) return alert(error.message);
     
@@ -123,37 +116,37 @@ export default function App() {
             requested_subjects: role === "teacher" ? teacherSubjects : null,
             is_approved: email === ADMIN_EMAIL
         }).eq("id", data.user.id);
-        alert("Request Sent! Approval Pending.");
+        alert("Registration request sent!");
     }
   };
 
-  if (loading) return <div className="loader"><h2>Scholars Loading...</h2></div>;
+  if (loading) return <div className="loader"><h2>Loading ScholarAsync...</h2></div>;
 
   if (!session) {
     return (
-      <div className="auth-card">
-        <h1>ScholarAsync ⚡</h1>
-        <p className="subtitle">The School OS for the Modern Greek Student</p>
-        <div className="auth-inputs">
-            <input type="email" placeholder="Email" onChange={e => setAuthData({...authData, email: e.target.value})} />
-            <input type="password" placeholder="Password" onChange={e => setAuthData({...authData, password: e.target.value})} />
-            {authMode === "signup" && (
-                <>
-                <select onChange={e => setAuthData({...authData, role: e.target.value})}>
-                    <option value="student">I am a Student</option>
-                    <option value="teacher">I am a Teacher/Admin</option>
+      <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f1f5f9'}}>
+        <div className="auth-card">
+          <h1>ScholarAsync ⚡</h1>
+          <p className="subtitle">School Management System</p>
+          <input type="email" placeholder="Email" onChange={e => setAuthData({...authData, email: e.target.value})} />
+          <input type="password" placeholder="Password" onChange={e => setAuthData({...authData, password: e.target.value})} />
+          {authMode === "signup" && (
+            <>
+              <select onChange={e => setAuthData({...authData, role: e.target.value})}>
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+              </select>
+              {authData.role === "student" && (
+                <select onChange={e => setAuthData({...authData, userClass: e.target.value})}>
+                  {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                {authData.role === "student" && (
-                    <select onChange={e => setAuthData({...authData, userClass: e.target.value})}>
-                        {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                )}
-                </>
-            )}
-            <button className="prio-btn" onClick={handleAuth}>{authMode === "login" ? "Enter Portal" : "Join Your Team"}</button>
-            <p className="toggle-link" onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
-                {authMode === "login" ? "Don't have an account? Sign up" : "Already have an account? Login"}
-            </p>
+              )}
+            </>
+          )}
+          <button className="prio-btn" onClick={handleAuth}>{authMode === "login" ? "Enter Portal" : "Register"}</button>
+          <p className="logout-lite" style={{textAlign: 'center', cursor: 'pointer'}} onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
+            {authMode === "login" ? "Need an account? Sign up" : "Already have an account? Login"}
+          </p>
         </div>
       </div>
     );
@@ -161,37 +154,33 @@ export default function App() {
 
   return (
     <div className="dashboard-layout">
-      {/* SIDEBAR NAVIGATION */}
       <aside className="sidebar">
         <div className="logo">ScholarAsync</div>
         <nav>
-            <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}>📅 Calendar</button>
-            <button className={view === "list" ? "active" : ""} onClick={() => setView("list")}>📝 All Tasks</button>
-            {session.user.email === ADMIN_EMAIL && (
-                <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>🛡️ Control Panel</button>
-            )}
-            <button onClick={() => setShowSettings(true)}>⚙️ Profile</button>
+          <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}>📅 Calendar</button>
+          {session.user.email === ADMIN_EMAIL && (
+            <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>🛡️ Control Panel</button>
+          )}
         </nav>
         <div className="user-tag">
-            <small>{profile?.role?.toUpperCase()}</small>
-            <p>{profile?.user_class || "Faculty"}</p>
-            <button className="logout-lite" onClick={() => supabase.auth.signOut()}>Sign Out</button>
+          <small>{profile?.role?.toUpperCase()}</small>
+          <p>{profile?.user_class || "Faculty"}</p>
+          <button className="logout-lite" onClick={() => supabase.auth.signOut()}>Sign Out</button>
         </div>
       </aside>
 
       <main className="main-content">
-        {/* TOP NEWS TICKER */}
         <div className="announcement-ticker">
-            <div className="ticker-label">LATEST</div>
-            <div className="ticker-text">
-                {announcements.length > 0 
-                  ? announcements.map(a => `• [${a.subject}] ${a.title} `).join(" ") 
-                  : "Welcome to ScholarAsync. No new updates."}
-            </div>
+          <div className="ticker-label">LATEST</div>
+          <div className="ticker-text">
+            {announcements.length > 0 
+              ? announcements.map(a => `• [${a.subject}] ${a.title} `).join(" ") 
+              : "Welcome to ScholarAsync. No new updates."}
+          </div>
         </div>
 
         {view === "calendar" ? (
-          <div className="calendar-card animate-in">
+          <div className="calendar-card">
             <FullCalendar
               plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
@@ -199,8 +188,8 @@ export default function App() {
               height="auto"
               dateClick={(arg) => {
                 if (profile?.role === "teacher" || session.user.email === ADMIN_EMAIL) {
-                    setSelectedDate(arg.dateStr);
-                    setShowAddModal(true);
+                  setSelectedDate(arg.dateStr);
+                  setShowAddModal(true);
                 }
               }}
               eventClick={(info) => {
@@ -209,66 +198,52 @@ export default function App() {
               }}
             />
           </div>
-        ) : view === "admin" ? <AdminPanel /> : (
-            <div className="task-list">
-                <h2>Pending Assignments</h2>
-                {events.map(ev => (
-                    <div className="task-item" style={{borderLeft: `5px solid ${ev.backgroundColor}`}}>
-                        <span>{ev.start}</span>
-                        <b>{ev.title}</b>
-                    </div>
-                ))}
-            </div>
+        ) : (
+          <AdminPanel />
         )}
       </main>
 
-      {/* MODALS */}
+      {/* ADD MODAL */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Post to {selectedDate}</h3>
-            <div className="modal-grid">
-                <input placeholder="Title (e.g. Exercises 1-5)" onChange={e => setNewHW({...newHW, title: e.target.value})} />
-                <input placeholder="Subject (e.g. Math)" onChange={e => setNewHW({...newHW, subject: e.target.value})} />
-                <select onChange={e => setNewHW({...newHW, type: e.target.value})}>
-                    <option value="Homework">🏠 Homework</option>
-                    <option value="Test">⚠️ Test/Exam</option>
-                    <option value="Material">📖 Class Material</option>
-                </select>
-            </div>
-            <div className="modal-actions">
-                <button className="prio-btn" onClick={async () => {
-                    await supabase.from("assignments").insert([{
-                        title: newHW.title, 
-                        subject: newHW.subject,
-                        class_name: profile.user_class || "General", 
-                        due_date: selectedDate,
-                        teacher_id: session.user.id
-                    }]);
-                    setShowAddModal(false);
-                    fetchEvents(profile, session.user.email);
-                }}>Publish</button>
-                <button className="sec-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
+            <input placeholder="Subject (e.g. Math)" style={{marginBottom: '10px'}} onChange={e => setNewHW({...newHW, subject: e.target.value})} />
+            <input placeholder="Assignment Title" style={{marginBottom: '10px'}} onChange={e => setNewHW({...newHW, title: e.target.value})} />
+            <div style={{display: 'flex', gap: '10px'}}>
+              <button className="prio-btn" style={{flex: 1}} onClick={async () => {
+                await supabase.from("assignments").insert([{
+                  title: newHW.title, subject: newHW.subject,
+                  class_name: profile.user_class || "General", due_date: selectedDate,
+                  teacher_id: session.user.id,
+                }]);
+                setShowAddModal(false);
+                fetchEvents(profile, session.user.email);
+              }}>Publish</button>
+              <button className="sec-btn" style={{flex: 1}} onClick={() => setShowAddModal(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* VIEW MODAL */}
       {showViewModal && (
         <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="badge">{selectedEvent?.subject}</div>
-            <h2>{selectedEvent?.title}</h2>
-            <p className="date-label">📅 Due: {selectedEvent?.date}</p>
-            <div className="modal-actions">
-                {(profile?.role !== "student" || session.user.email === ADMIN_EMAIL) && (
-                    <button className="del-btn" onClick={async () => {
-                        await supabase.from("assignments").delete().eq("id", selectedEvent.id);
-                        setShowViewModal(false);
-                        fetchEvents(profile, session.user.email);
-                    }}>Delete Post</button>
-                )}
-                <button onClick={() => setShowViewModal(false)}>Close</button>
+            <div style={{background: '#e0e7ff', color: '#4338ca', display: 'inline-block', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', marginBottom: '10px'}}>
+              {selectedEvent?.subject}
+            </div>
+            <h2 style={{margin: '0 0 10px 0'}}>{selectedEvent?.title}</h2>
+            <p style={{color: '#64748b'}}>📅 Due Date: {selectedEvent?.date}</p>
+            <div className="modal-actions" style={{marginTop: '20px'}}>
+              {(profile?.role !== "student" || session.user.email === ADMIN_EMAIL) && (
+                <button className="prio-btn" style={{background: '#ef4444', width: '100%', marginBottom: '10px'}} onClick={async () => {
+                  await supabase.from("assignments").delete().eq("id", selectedEvent.id);
+                  setShowViewModal(false);
+                  fetchEvents(profile, session.user.email);
+                }}>Delete Assignment</button>
+              )}
+              <button className="sec-btn" style={{width: '100%'}} onClick={() => setShowViewModal(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -277,4 +252,54 @@ export default function App() {
   );
 }
 
-// ... AdminPanel function remains the same ...
+function AdminPanel() {
+  const [users, setUsers] = useState([]);
+  const fetchUsers = async () => {
+    const { data } = await supabase.from("profiles").select("*").order("is_approved", { ascending: true });
+    setUsers(data || []);
+  };
+  useEffect(() => { fetchUsers(); }, []);
+
+  const toggleApproval = async (id, status) => {
+    await supabase.from("profiles").update({ is_approved: !status }).eq("id", id);
+    fetchUsers();
+  };
+
+  const deleteUser = async (id) => {
+    if (window.confirm("Delete this user permanently?")) {
+      await supabase.from("profiles").delete().eq("id", id);
+      fetchUsers();
+    }
+  };
+
+  return (
+    <div className="calendar-card">
+      <h2>User Management</h2>
+      <div style={{overflowX: 'auto'}}>
+        <table style={{width: '100%', borderCollapse: 'collapse', marginTop: '10px'}}>
+          <thead>
+            <tr style={{textAlign: 'left', background: '#f8fafc', color: '#64748b', fontSize: '12px'}}>
+              <th style={{padding: '12px'}}>Email</th>
+              <th style={{padding: '12px'}}>Role</th>
+              <th style={{padding: '12px'}}>Status</th>
+              <th style={{padding: '12px'}}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} style={{borderBottom: '1px solid #f1f5f9'}}>
+                <td style={{padding: '12px', fontSize: '14px'}}>{u.email}</td>
+                <td style={{padding: '12px', fontSize: '14px'}}>{u.role}</td>
+                <td style={{padding: '12px'}}>{u.is_approved ? "✅ Approved" : "⏳ Pending"}</td>
+                <td style={{padding: '12px'}}>
+                  <button className="sec-btn" style={{padding: '5px 10px', fontSize: '12px', marginRight: '5px'}} onClick={() => toggleApproval(u.id, u.is_approved)}>Toggle</button>
+                  <button className="prio-btn" style={{padding: '5px 10px', fontSize: '12px', background: '#fee2e2', color: '#dc2626'}} onClick={() => deleteUser(u.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
