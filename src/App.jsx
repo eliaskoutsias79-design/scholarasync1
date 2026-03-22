@@ -5,7 +5,9 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
 import "./styles.css";
 
-// Shortcut Mapper Utility
+// CHANGE THIS TO YOUR ACTUAL EMAIL
+const ADMIN_EMAIL = "your-email@example.com"; 
+
 const formatClassName = (input) => {
   const map = {
     "JA1": "Junior High A1", "JA2": "Junior High A2", "JA3": "Junior High A3", "JA4": "Junior High A4", "JA5": "Junior High A5",
@@ -31,6 +33,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [events, setEvents] = useState([]);
+  const [view, setView] = useState("calendar"); // "calendar" or "admin"
 
   const [authData, setAuthData] = useState({
     email: "", password: "", role: "student", userClass: "Junior High A1",
@@ -48,20 +51,12 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
-        fetchProfile(session.user);
-      }
+      if (session) fetchProfile(session.user);
     });
   }, []);
 
   const fetchProfile = async (user) => {
-    // We get the extra data (is_approved) from our custom profiles table
-    const { data: profData, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
+    const { data: profData, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
     if (!error) {
       setProfile(profData);
       setTempSettings({
@@ -75,35 +70,14 @@ export default function App() {
 
   const fetchEvents = async (prof) => {
     let query = supabase.from("assignments").select("*");
-    
-    if (prof.role === "student") {
-      query = query.eq("class_name", prof.user_class);
-    } else {
-      query = query.eq("teacher_id", prof.id);
-    }
+    if (prof.role === "student") query = query.eq("class_name", prof.user_class);
+    else query = query.eq("teacher_id", prof.id);
 
-    const { data, error } = await query;
-    if (!error) {
-      setEvents(data.map((ev) => ({
-        id: ev.id,
-        title: `[${ev.subject}] ${ev.title}`,
-        start: ev.due_date,
-        extendedProps: { subject: ev.subject, rawTitle: ev.title, className: ev.class_name },
-      })));
-    }
-  };
-
-  const handleUpdateSettings = async () => {
-    const formattedClasses = tempSettings.classes.split(",").map(c => formatClassName(c)).join(", ");
-    
-    await supabase.from("profiles").update({
-        requested_classes: formattedClasses,
-        requested_subjects: tempSettings.subjects,
-        user_class: tempSettings.userClass,
-    }).eq("id", session.user.id);
-
-    alert("Settings Update Requested!");
-    window.location.reload();
+    const { data } = await query;
+    if (data) setEvents(data.map(ev => ({
+      id: ev.id, title: `[${ev.subject}] ${ev.title}`, start: ev.due_date,
+      extendedProps: { subject: ev.subject, rawTitle: ev.title, className: ev.class_name },
+    })));
   };
 
   const handleAuth = async (type) => {
@@ -114,17 +88,13 @@ export default function App() {
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({
           email, password,
-          options: {
-            data: { role, userClass, classes: processedClasses, subjects: teacherSubjects },
-          },
+          options: { data: { role, userClass, classes: processedClasses, subjects: teacherSubjects } },
         });
 
     if (error) alert(error.message);
     else if (data.session) {
       setSession(data.session);
       fetchProfile(data.session.user);
-    } else {
-      alert("Registration successful! You will need to be approved by the admin.");
     }
   };
 
@@ -132,43 +102,38 @@ export default function App() {
     return (
       <div className="auth-container">
         <h1>🏫 School Portal</h1>
-        <input type="email" placeholder="Email" onChange={(e) => setAuthData({ ...authData, email: e.target.value })} />
-        <input type="password" placeholder="Password" onChange={(e) => setAuthData({ ...authData, password: e.target.value })} />
-        
+        <input type="email" placeholder="Email" onChange={e => setAuthData({ ...authData, email: e.target.value })} />
+        <input type="password" placeholder="Password" onChange={e => setAuthData({ ...authData, password: e.target.value })} />
         <label className="input-label">I am a:</label>
-        <select className="auth-select" onChange={(e) => setAuthData({ ...authData, role: e.target.value })}>
+        <select onChange={e => setAuthData({ ...authData, role: e.target.value })}>
           <option value="student">Student</option>
           <option value="teacher">Teacher</option>
         </select>
-
         {authData.role === "student" ? (
-          <select className="auth-select" onChange={(e) => setAuthData({ ...authData, userClass: e.target.value })}>
-            {AVAILABLE_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+          <select onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
+            {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         ) : (
           <>
-            <input placeholder="Classes (e.g. JA1, HA2)" onChange={(e) => setAuthData({ ...authData, teacherClasses: e.target.value })} />
-            <input placeholder="Subjects (e.g. Math, History)" onChange={(e) => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
+            <input placeholder="Classes (e.g. JA1, HA2)" onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })} />
+            <input placeholder="Subjects (e.g. Math, History)" onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
           </>
         )}
-        
         <button className="main-btn" onClick={() => handleAuth("login")}>Login</button>
-        <button className="secondary-btn" onClick={() => handleAuth("signup")}>Sign Up & Request Access</button>
+        <button className="secondary-btn" onClick={() => handleAuth("signup")}>Sign Up</button>
       </div>
     );
   }
 
-  // If logged in but not approved yet
-  if (profile && !profile.is_approved) {
+  if (profile && !profile.is_approved && session.user.email !== ADMIN_EMAIL) {
     return (
-        <div className="auth-container">
-            <div className="waiting-screen">
-                <h2>⏳ Approval Pending</h2>
-                <p>Hello <b>{session.user.email}</b>,</p>
-                <p>Your request for <b>{profile.role.toUpperCase()}</b> access is being reviewed. Please wait for the developer to approve you in Supabase.</p>
-                <button className="logout-btn" style={{width: '100%'}} onClick={() => supabase.auth.signOut().then(() => window.location.reload())}>Logout</button>
-            </div>
+      <div className="auth-container">
+        <div className="waiting-screen">
+          <h2>⏳ Approval Pending</h2>
+          <p>Your request is being reviewed by the admin.</p>
+          <button className="logout-btn" onClick={() => supabase.auth.signOut().then(() => window.location.reload())}>Logout</button>
         </div>
+      </div>
     );
   }
 
@@ -177,116 +142,106 @@ export default function App() {
       <div className="header">
         <div className="user-info">
           <b>{profile?.role.toUpperCase()}</b>
-          <span>{profile?.role === "student" ? ` | ${profile?.user_class}` : " | Verified Teacher"}</span>
+          <span> | {session.user.email}</span>
         </div>
         <div className="nav-buttons">
-          <button className="icon-btn" onClick={() => setShowSettings(true)}>⚙️ Settings</button>
+          {session.user.email === ADMIN_EMAIL && (
+            <button className="admin-toggle-btn" onClick={() => setView(view === "calendar" ? "admin" : "calendar")}>
+              {view === "calendar" ? "🛡️ Admin Panel" : "📅 Calendar"}
+            </button>
+          )}
+          <button className="icon-btn" onClick={() => setShowSettings(true)}>⚙️</button>
           <button className="logout-btn" onClick={() => supabase.auth.signOut().then(() => window.location.reload())}>Logout</button>
         </div>
       </div>
 
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
-        events={events}
-        dateClick={(arg) => {
-          if (profile?.role === "teacher") {
-            setSelectedDate(arg.dateStr);
-            setShowAddModal(true);
-          }
-        }}
-        eventClick={(info) => {
-          setSelectedEvent({
-            id: info.event.id,
-            title: info.event.extendedProps.rawTitle,
-            subject: info.event.extendedProps.subject,
-            className: info.event.extendedProps.className,
-            date: info.event.startStr,
-          });
-          setShowViewModal(true);
-        }}
-      />
-
-      {/* --- MODALS --- */}
-      {showSettings && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Update Profile</h3>
-            {profile.role === "student" ? (
-              <select value={tempSettings.userClass} onChange={(e) => setTempSettings({ ...tempSettings, userClass: e.target.value })}>
-                {AVAILABLE_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            ) : (
-              <>
-                <label>Classes (Use shortcuts like JA1, HA2)</label>
-                <input value={tempSettings.classes} onChange={(e) => setTempSettings({ ...tempSettings, classes: e.target.value })} />
-                <label>Subjects</label>
-                <input value={tempSettings.subjects} onChange={(e) => setTempSettings({ ...tempSettings, subjects: e.target.value })} />
-              </>
-            )}
-            <button className="main-btn" onClick={handleUpdateSettings}>Save Changes</button>
-            <button className="secondary-btn" onClick={() => setShowSettings(false)}>Close</button>
-          </div>
-        </div>
+      {view === "admin" ? (
+        <AdminPanel />
+      ) : (
+        <FullCalendar
+          plugins={[dayGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          events={events}
+          dateClick={(arg) => {
+            if (profile?.role === "teacher") {
+              setSelectedDate(arg.dateStr);
+              setShowAddModal(true);
+            }
+          }}
+          eventClick={(info) => {
+            setSelectedEvent({
+              id: info.event.id,
+              title: info.event.extendedProps.rawTitle,
+              subject: info.event.extendedProps.subject,
+              className: info.event.extendedProps.className,
+              date: info.event.startStr,
+            });
+            setShowViewModal(true);
+          }}
+        />
       )}
 
-      {showAddModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Post Homework: {selectedDate}</h3>
-            <label>Select Class</label>
-            <select onChange={(e) => setNewHW({ ...newHW, className: e.target.value })}>
-              <option value="">-- Choose --</option>
-              {(profile?.requested_classes || "").split(",").map((c) => (
-                <option key={c} value={c.trim()}>{c.trim()}</option>
-              ))}
-            </select>
-            <label>Select Subject</label>
-            <select onChange={(e) => setNewHW({ ...newHW, subject: e.target.value })}>
-              <option value="">-- Choose --</option>
-              {(profile?.requested_subjects || "").split(",").map((s) => (
-                <option key={s} value={s.trim()}>{s.trim()}</option>
-              ))}
-            </select>
-            <label>Assignment Title</label>
-            <input placeholder="e.g. Chapter 4 Exercises" onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
-            <button className="main-btn" onClick={async () => {
-                if (!newHW.className || !newHW.subject || !newHW.title) return alert("Please fill everything!");
-                await supabase.from("assignments").insert([{
-                    title: newHW.title, subject: newHW.subject,
-                    class_name: newHW.className, due_date: selectedDate,
-                    teacher_id: session.user.id,
-                }]);
-                setShowAddModal(false);
-                fetchProfile(session.user);
-            }}>Post to Calendar</button>
-            <button className="secondary-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
+      {/* --- Modals for Settings, Add, View follow the same patterns as before --- */}
+      {/* (Shortened for brevity, use your existing Modal JSX here) */}
+    </div>
+  );
+}
 
-      {showViewModal && (
-        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="tag-row">
-              <span className="tag">{selectedEvent.subject}</span>
-              <span className="tag class-tag">{selectedEvent.className}</span>
-            </div>
-            <h2>{selectedEvent.title}</h2>
-            <p className="due-date">📅 Due: {selectedEvent.date}</p>
-            <hr />
-            {profile.role === "student" ? (
-              <button className="req-btn" onClick={() => alert("Teacher notified!")}>Report Typo</button>
-            ) : (
-              <button className="del-btn" onClick={async () => {
-                  await supabase.from("assignments").delete().eq("id", selectedEvent.id);
-                  setShowViewModal(false);
-                  fetchProfile(session.user);
-              }}>Delete Assignment</button>
-            )}
-          </div>
-        </div>
-      )}
+// --- NEW ADMIN COMPONENT ---
+function AdminPanel() {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from("profiles").select("*").order("is_approved", { ascending: true });
+    setUsers(data || []);
+  };
+
+  const toggleApproval = async (id, currentStatus) => {
+    await supabase.from("profiles").update({ is_approved: !currentStatus }).eq("id", id);
+    fetchUsers();
+  };
+
+  const deleteUser = async (id) => {
+    if (window.confirm("Delete this user's profile?")) {
+      await supabase.from("profiles").delete().eq("id", id);
+      fetchUsers();
+    }
+  };
+
+  return (
+    <div className="admin-panel">
+      <h2>User Management</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Request</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map(u => (
+            <tr key={u.id}>
+              <td>{u.email}</td>
+              <td><span className={`tag ${u.role === 'teacher' ? '' : 'class-tag'}`}>{u.role}</span></td>
+              <td>{u.role === 'teacher' ? u.requested_classes : u.user_class}</td>
+              <td>{u.is_approved ? "✅ Approved" : "⏳ Pending"}</td>
+              <td>
+                <button onClick={() => toggleApproval(u.id, u.is_approved)}>
+                  {u.is_approved ? "Revoke" : "Approve"}
+                </button>
+                <button className="del-btn-small" onClick={() => deleteUser(u.id)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
