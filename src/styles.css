@@ -83,6 +83,17 @@ button {
   background: #e2e8f0;
 }
 
+/* Admin Toggle Button in Header */
+.admin-toggle-btn {
+  background: #0f172a;
+  color: white;
+  padding: 8px 15px;
+}
+
+.admin-toggle-btn:hover {
+  background: #334155;
+}
+
 /* SCH.gr Special Button */
 .sch-btn {
   background-color: #005a96; /* Official PSD Blue */
@@ -229,4 +240,70 @@ button {
 .modal-content input, .modal-content select {
   width: 100%;
   box-sizing: border-box;
+}
+
+/* --- NEW SECTIONS FOR APPROVAL & ADMIN --- */
+
+/* Pending Screen */
+.waiting-screen {
+  padding: 20px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  color: #92400e;
+  text-align: center;
+}
+
+.waiting-screen h2 {
+  margin-top: 0;
+}
+
+/* Admin Panel Layout */
+.admin-panel {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-panel h2 {
+  margin-top: 0;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+
+.admin-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.admin-panel th, .admin-panel td {
+  text-align: left;
+  padding: 15px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.admin-panel th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-panel tr:hover {
+  background: #fafafa;
+}
+
+.del-btn-small {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 6px 12px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.del-btn-small:hover {
+  background: #fecaca;
 }
