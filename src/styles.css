@@ -15,7 +15,7 @@ body {
   background: #f8fafc;
 }
 
-/* --- SIDEBAR (PC) / FLOATING DOCK (MOBILE) --- */
+/* --- SIDEBAR (PC) --- */
 .sidebar {
   width: 260px;
   background: #0f172a;
@@ -76,7 +76,21 @@ body {
   margin-top: auto;
 }
 
-/* --- MAIN CONTENT --- */
+.user-tag small { color: #6366f1; font-weight: bold; text-transform: uppercase; font-size: 10px; }
+.user-tag p { margin: 5px 0; font-size: 14px; font-weight: 600; }
+
+.logout-lite {
+  background: transparent;
+  color: #f87171;
+  font-size: 12px;
+  padding: 0;
+  margin-top: 10px;
+  text-decoration: underline;
+  cursor: pointer;
+  border: none;
+}
+
+/* --- MAIN CONTENT AREA --- */
 .main-content {
   flex: 1;
   padding: 2rem;
@@ -108,6 +122,8 @@ body {
   animation: pulse 2s infinite;
 }
 
+.ticker-text { font-size: 14px; font-weight: 500; color: #475569; }
+
 /* --- CALENDAR CUSTOMIZATION --- */
 .calendar-card {
   background: white;
@@ -118,39 +134,41 @@ body {
 }
 
 .fc { --fc-button-bg-color: #4f46e5; --fc-border-color: #f1f5f9; }
+.fc-toolbar-title { font-size: 1.2rem !important; font-weight: 800 !important; }
 .fc-event { cursor: pointer; padding: 3px 6px; border-radius: 6px !important; border: none !important; font-weight: 500; }
+.fc-day-today { background: rgba(99, 102, 241, 0.05) !important; }
 
 /* --- MOBILE "FIRE" TRANSFORMATION --- */
 @media (max-width: 768px) {
-  .dashboard-layout {
-    flex-direction: column;
-  }
+  .dashboard-layout { flex-direction: column; }
 
-  /* SIDEBAR BECOMES A FLOATING DOCK */
+  /* SIDEBAR BECOMES A CENTERED FLOATING DOCK */
   .sidebar {
     position: fixed;
     bottom: 20px;
-    left: 20px;
-    right: 20px;
-    width: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92%;
+    max-width: 420px;
     height: 70px;
     flex-direction: row;
     padding: 0 15px;
-    background: rgba(15, 23, 42, 0.9); /* Dark Glass */
+    background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(12px);
     border-radius: 24px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .logo, .user-tag p, .user-tag small {
-    display: none; /* Hide text for icons */
-  }
+  .logo, .user-tag p, .user-tag small { display: none; }
 
   .sidebar nav {
     display: flex;
-    justify-content: space-around;
-    width: 100%;
-    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex: 1;
   }
 
   .sidebar nav button {
@@ -159,40 +177,36 @@ body {
     justify-content: center;
     padding: 0;
     margin-bottom: 0;
-    font-size: 22px; /* Emoji/Icon size */
-  }
-
-  .user-tag {
-    margin-top: 0;
-    background: transparent;
-    padding: 0;
-  }
-
-  .logout-lite {
     font-size: 22px;
-    text-decoration: none;
+    border-radius: 15px;
   }
 
-  /* MAIN CONTENT AREA */
+  /* Fix Logout Button inside Dock */
+  .user-tag { margin: 0; padding: 0; background: transparent; }
+  
+  .logout-lite {
+    font-size: 18px !important;
+    text-decoration: none;
+    margin-top: 0;
+    background: rgba(239, 68, 68, 0.15);
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Main Content Padding for Dock */
   .main-content {
     padding: 15px;
-    padding-bottom: 110px; /* Space for the dock */
+    padding-bottom: 110px;
   }
 
-  .calendar-card {
-    padding: 15px;
-    border-radius: 20px;
-  }
+  .calendar-card { padding: 15px; border-radius: 20px; }
 
-  /* Fix the calendar dots on mobile */
-  .fc-daygrid-event {
-    margin-top: 2px !important;
-    padding: 2px !important;
-  }
-
-  .fc-event-title {
-    font-size: 9px !important;
-  }
+  /* Mobile Event Scaling */
+  .fc-daygrid-event { margin-top: 2px !important; padding: 2px !important; }
+  .fc-event-title { font-size: 9px !important; }
 }
 
 /* --- AUTH SCREENS --- */
@@ -210,6 +224,16 @@ body {
   text-align: center;
 }
 
+input, select {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  transition: 0.2s;
+}
+
+input:focus { border-color: #4f46e5; outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
 /* --- BUTTONS & ANIMATIONS --- */
 .prio-btn {
   background: #4f46e5;
@@ -218,10 +242,20 @@ body {
   border-radius: 12px;
   font-weight: 700;
   border: none;
-  transition: transform 0.2s;
+  transition: all 0.2s;
+  cursor: pointer;
 }
 
 .prio-btn:active { transform: scale(0.96); }
+
+.sec-btn {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+}
 
 @keyframes pulse {
   0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
