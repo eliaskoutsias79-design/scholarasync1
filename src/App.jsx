@@ -32,7 +32,7 @@ const AVAILABLE_CLASSES = [
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true); // Added loading state
+  const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [view, setView] = useState("calendar"); 
   const [authMode, setAuthMode] = useState("login");
@@ -51,14 +51,12 @@ export default function App() {
   const [newHW, setNewHW] = useState({ title: "", subject: "", className: "" });
 
   useEffect(() => {
-    // 1. Check session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) fetchProfile(session.user);
       else setLoading(false);
     });
 
-    // 2. Listen for Auth Changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) fetchProfile(session.user);
@@ -95,16 +93,11 @@ export default function App() {
     if (!prof) return;
     let query = supabase.from("assignments").select("*");
 
-    // ADMIN VIEW: See everything
     if (email === ADMIN_EMAIL) {
-        // No filter needed for admin
-    } 
-    // STUDENT VIEW: Linked to the Class Name
-    else if (prof.role === "student") {
+        // Admins see all
+    } else if (prof.role === "student") {
         query = query.eq("class_name", prof.user_class);
-    } 
-    // TEACHER VIEW: Show what they personally posted
-    else {
+    } else {
         query = query.eq("teacher_id", prof.id);
     }
 
@@ -132,11 +125,20 @@ export default function App() {
         });
 
     if (error) alert(error.message);
-    else if (data.session) {
+    else if (data.user && authMode === "signup") {
+        // SYNC: Manually ensure profile row is updated immediately
+        await supabase.from("profiles").update({
+            role: role,
+            user_class: role === "student" ? userClass : null,
+            requested_classes: role === "teacher" ? processedClasses : null,
+            requested_subjects: role === "teacher" ? teacherSubjects : null,
+            is_approved: email === ADMIN_EMAIL // Admin is auto-approved
+        }).eq("id", data.user.id);
+        
+        alert("Registration request sent!");
+    } else if (data.session) {
       setSession(data.session);
       fetchProfile(data.session.user);
-    } else if (authMode === "signup") {
-      alert("Registration request sent! Please wait for admin approval.");
     }
   };
 
@@ -147,7 +149,7 @@ export default function App() {
       requested_subjects: tempSettings.subjects,
       user_class: tempSettings.userClass,
     }).eq("id", session.user.id);
-    alert("Profile Update Requested!");
+    alert("Profile Updated!");
     setShowSettings(false);
     fetchProfile(session.user);
   };
@@ -283,7 +285,7 @@ export default function App() {
             <input placeholder="Assignment Title" onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
             <button className="main-btn" onClick={async () => {
                 if (!newHW.className || !newHW.subject || !newHW.title) return alert("Fill all fields!");
-                const officialName = formatClassName(newHW.className); // ENSURE FORMAT MATCH
+                const officialName = formatClassName(newHW.className);
                 await supabase.from("assignments").insert([{
                     title: newHW.title, subject: newHW.subject,
                     class_name: officialName, due_date: selectedDate,
