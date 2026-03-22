@@ -119,81 +119,88 @@ body {
 
 /* --- MOBILE "FIRE" TRANSFORMATION --- */
 @media (max-width: 768px) {
+  /* 1. Hide desktop text */
   .desktop-only { display: none !important; }
 
+  /* 2. Force the dashboard to stack */
   .dashboard-layout { flex-direction: column; }
 
-  /* THE FLOATING DOCK */
+  /* 3. The Dock (The Floating Bar) */
   .sidebar {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 90%;
-    max-width: 400px;
+    width: 85%; /* Narrower for a sleeker look */
+    max-width: 380px;
     height: 65px;
-    flex-direction: row;
+    flex-direction: row !important; /* Force horizontal */
     padding: 0 15px;
     background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(10px);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    z-index: 500; /* Dock stays visible, but below modals */
+    z-index: 500;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .logo, .user-tag p, .user-tag small { display: none; }
+  /* Hide the Logo & User Info on mobile dock */
+  .logo, .user-tag p, .user-tag small { display: none !important; }
 
   .sidebar nav {
     display: flex;
     justify-content: center;
-    gap: 25px;
+    gap: 15px;
     flex: 1;
   }
 
+  /* 4. The Buttons inside the Dock */
   .sidebar nav button {
     width: 50px !important;
     height: 50px !important;
-    font-size: 24px;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    padding: 0;
-    margin: 0;
+    background: transparent;
+    font-size: 22px; /* Emoji size */
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .sidebar nav button.active {
-    background: rgba(99, 102, 241, 0.2);
-    color: #818cf8;
+    background: rgba(99, 102, 241, 0.2) !important;
+    border-radius: 15px;
   }
 
+  /* 5. The Sign Out Button */
   .user-tag { margin: 0; padding: 0; background: transparent; }
   .logout-lite {
-    font-size: 20px !important;
-    background: rgba(239, 68, 68, 0.2);
     width: 45px;
     height: 45px;
+    background: rgba(239, 68, 68, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
+    font-size: 20px !important;
     text-decoration: none;
+    margin: 0 !important;
   }
 
-  /* MODAL POSITIONING (CRITICAL FIX) */
-  .modal-overlay {
-    align-items: flex-start; /* Move popup to top on mobile */
-    padding-top: 15vh;        /* Keeps assignment details away from the dock */
-  }
-
-  .modal-content {
-    width: 92%;
-    max-height: 65vh; /* Stops before it hits the bottom dock */
-    overflow-y: auto;
-  }
-
+  /* 6. Calendar & Content Spacing */
   .main-content {
-    padding: 15px;
-    padding-bottom: 120px; /* Allow scrolling past the dock */
+    padding: 10px;
+    padding-bottom: 120px; /* Space to scroll past dock */
   }
+
+  .calendar-card {
+    padding: 10px;
+    border-radius: 15px;
+  }
+
+  .fc-toolbar-title { font-size: 1.1rem !important; }
 }
 
 /* --- ANIMATIONS --- */
