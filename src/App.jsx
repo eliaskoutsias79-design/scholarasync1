@@ -91,16 +91,40 @@ export default function App() {
   };
 
   const fetchEvents = async (prof) => {
-    let query = supabase.from("assignments").select("*");
-    if (prof.role === "student") query = query.eq("class_name", prof.user_class);
-    else query = query.eq("teacher_id", prof.id);
+  if (!prof) return;
 
-    const { data } = await query;
-    if (data) setEvents(data.map(ev => ({
-      id: ev.id, title: `[${ev.subject}] ${ev.title}`, start: ev.due_date,
-      extendedProps: { subject: ev.subject, rawTitle: ev.title, className: ev.class_name },
+  let query = supabase.from("assignments").select("*");
+
+  // FIX: If you have a class assigned, you should see that class's work
+  // even if you are an Admin or Teacher.
+  if (prof.user_class) {
+    query = query.eq("class_name", prof.user_class);
+  } 
+  // Fallback: If no class is assigned (pure Teacher), show only their own posts
+  else {
+    query = query.eq("teacher_id", prof.id);
+  }
+
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error("Fetch Error:", error.message);
+    return;
+  }
+
+  if (data) {
+    setEvents(data.map(ev => ({
+      id: ev.id,
+      title: `[${ev.subject}] ${ev.title}`,
+      start: ev.due_date,
+      extendedProps: { 
+        subject: ev.subject, 
+        rawTitle: ev.title, 
+        className: ev.class_name 
+      },
     })));
-  };
+  }
+};
 
   const handleAuth = async () => {
     const { email, password, role, userClass, teacherClasses, teacherSubjects } = authData;
