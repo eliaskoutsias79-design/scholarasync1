@@ -5,7 +5,6 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
 import "./styles.css";
 
-// ADMIN CONFIG
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com"; 
 
 const formatClassName = (input) => {
@@ -34,7 +33,7 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [events, setEvents] = useState([]);
   const [view, setView] = useState("calendar"); 
-  const [authMode, setAuthMode] = useState("login"); // NEW: Toggle between login/signup
+  const [authMode, setAuthMode] = useState("login");
 
   const [authData, setAuthData] = useState({
     email: "", password: "", role: "student", userClass: "Junior High A1",
@@ -56,15 +55,21 @@ export default function App() {
     });
   }, []);
 
+  // Sync tempSettings whenever profile updates
+  useEffect(() => {
+    if (profile) {
+      setTempSettings({
+        classes: profile.requested_classes || "",
+        subjects: profile.requested_subjects || "",
+        userClass: profile.user_class || "",
+      });
+    }
+  }, [profile]);
+
   const fetchProfile = async (user) => {
     const { data: profData, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    if (!error) {
+    if (!error && profData) {
       setProfile(profData);
-      setTempSettings({
-        classes: profData.requested_classes || "",
-        subjects: profData.requested_subjects || "",
-        userClass: profData.user_class || "",
-      });
       fetchEvents(profData);
     }
   };
@@ -113,8 +118,6 @@ export default function App() {
     fetchProfile(session.user);
   };
 
-  // --- UI RENDERING ---
-
   if (!session) {
     return (
       <div className="auth-container">
@@ -122,10 +125,8 @@ export default function App() {
         <p style={{fontSize: '14px', color: '#64748b', marginBottom: '10px'}}>
           {authMode === "login" ? "Sign in to your account" : "Create a new account"}
         </p>
-
         <input type="email" placeholder="Email" onChange={e => setAuthData({ ...authData, email: e.target.value })} />
         <input type="password" placeholder="Password" onChange={e => setAuthData({ ...authData, password: e.target.value })} />
-        
         {authMode === "signup" && (
           <div className="signup-fields">
             <div className="divider">PROFILE SETUP</div>
@@ -134,28 +135,19 @@ export default function App() {
               <option value="student">Student</option>
               <option value="teacher">Teacher</option>
             </select>
-            
             {authData.role === "student" ? (
-              <>
-                <label className="input-label">Your Class:</label>
-                <select onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
-                  {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </>
+              <select onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
+                {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             ) : (
               <>
-                <label className="input-label">Teaching Details:</label>
                 <input placeholder="Classes (e.g. JA1, HA2)" onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })} />
                 <input placeholder="Subjects (e.g. Math, History)" onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
               </>
             )}
           </div>
         )}
-
-        <button className="main-btn" onClick={handleAuth}>
-          {authMode === "login" ? "Login" : "Request Access"}
-        </button>
-
+        <button className="main-btn" onClick={handleAuth}>{authMode === "login" ? "Login" : "Request Access"}</button>
         <div className="auth-toggle-text">
           {authMode === "login" ? (
             <p>Don't have an account? <span onClick={() => setAuthMode("signup")}>Create one</span></p>
@@ -183,7 +175,7 @@ export default function App() {
     <div className="App">
       <div className="header">
         <div className="user-info">
-          <b>{profile?.role.toUpperCase()}</b>
+          <b>{profile?.role?.toUpperCase()}</b>
           <span> | {session.user.email}</span>
         </div>
         <div className="nav-buttons">
@@ -203,11 +195,16 @@ export default function App() {
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
+          selectable={true}
+          unselectAuto={false}
           events={events}
           dateClick={(arg) => {
-            if (profile?.role === "teacher") {
+            console.log("Calendar clicked!", arg.dateStr); // Debug log
+            if (profile?.role === "teacher" && profile?.is_approved) {
               setSelectedDate(arg.dateStr);
               setShowAddModal(true);
+            } else {
+              console.log("Not a teacher or not approved.");
             }
           }}
           eventClick={(info) => {
@@ -223,19 +220,17 @@ export default function App() {
         />
       )}
 
-      {/* --- MODALS --- */}
-
       {showSettings && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Update Profile</h3>
-            {profile.role === "student" ? (
+            {profile?.role === "student" ? (
               <select value={tempSettings.userClass} onChange={(e) => setTempSettings({ ...tempSettings, userClass: e.target.value })}>
                 {AVAILABLE_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             ) : (
               <>
-                <label>Classes (Use shortcuts: JA1, HA2)</label>
+                <label>Classes (JA1, HA2, etc.)</label>
                 <input value={tempSettings.classes} onChange={(e) => setTempSettings({ ...tempSettings, classes: e.target.value })} />
                 <label>Subjects</label>
                 <input value={tempSettings.subjects} onChange={(e) => setTempSettings({ ...tempSettings, subjects: e.target.value })} />
@@ -269,13 +264,16 @@ export default function App() {
             <input placeholder="e.g. Exercises p.42" onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
             <button className="main-btn" style={{width: '100%', marginTop: '10px'}} onClick={async () => {
                 if (!newHW.className || !newHW.subject || !newHW.title) return alert("Fill all fields!");
-                await supabase.from("assignments").insert([{
+                const { error } = await supabase.from("assignments").insert([{
                     title: newHW.title, subject: newHW.subject,
                     class_name: newHW.className, due_date: selectedDate,
                     teacher_id: session.user.id,
                 }]);
-                setShowAddModal(false);
-                fetchProfile(session.user);
+                if (error) alert(error.message);
+                else {
+                    setShowAddModal(false);
+                    fetchProfile(session.user);
+                }
             }}>Post to Calendar</button>
             <button className="secondary-btn" style={{width: '100%', marginTop: '5px'}} onClick={() => setShowAddModal(false)}>Cancel</button>
           </div>
@@ -292,7 +290,7 @@ export default function App() {
             <h2>{selectedEvent.title}</h2>
             <p className="due-date">📅 Due: {selectedEvent.date}</p>
             <hr />
-            {profile.role === "student" ? (
+            {profile?.role === "student" ? (
               <button className="req-btn" onClick={() => alert("Admin notified!")}>Report Typo</button>
             ) : (
               <button className="del-btn" onClick={async () => {
@@ -310,37 +308,28 @@ export default function App() {
 
 function AdminPanel() {
   const [users, setUsers] = useState([]);
-
   useEffect(() => { fetchUsers(); }, []);
-
   const fetchUsers = async () => {
     const { data } = await supabase.from("profiles").select("*").order("is_approved", { ascending: true });
     setUsers(data || []);
   };
-
   const toggleApproval = async (id, currentStatus) => {
     await supabase.from("profiles").update({ is_approved: !currentStatus }).eq("id", id);
     fetchUsers();
   };
-
   const deleteUser = async (id) => {
     if (window.confirm("Delete profile?")) {
       await supabase.from("profiles").delete().eq("id", id);
       fetchUsers();
     }
   };
-
   return (
     <div className="admin-panel">
       <h2>User Management</h2>
       <table>
         <thead>
           <tr>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Request</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>Email</th><th>Role</th><th>Request</th><th>Status</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -351,9 +340,7 @@ function AdminPanel() {
               <td>{u.role === 'teacher' ? u.requested_classes : u.user_class}</td>
               <td>{u.is_approved ? "✅ Approved" : "⏳ Pending"}</td>
               <td>
-                <button onClick={() => toggleApproval(u.id, u.is_approved)}>
-                  {u.is_approved ? "Revoke" : "Approve"}
-                </button>
+                <button onClick={() => toggleApproval(u.id, u.is_approved)}>{u.is_approved ? "Revoke" : "Approve"}</button>
                 <button className="del-btn-small" onClick={() => deleteUser(u.id)}>Delete</button>
               </td>
             </tr>
