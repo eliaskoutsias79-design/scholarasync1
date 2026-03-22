@@ -1,5 +1,138 @@
 /* --- GLOBAL THEME --- */
 body {
+  font-family: "Inter", sans-serif;
+  background: #f1f5f9;
+  margin: 0;
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: #f8fafc;
+}
+
+/* --- SIDEBAR (PC) --- */
+.sidebar {
+  width: 260px;
+  background: #0f172a;
+  color: white;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.logo {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 2.5rem;
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sidebar nav button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 15px;
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  gap: 12px;
+}
+
+.sidebar nav button.active {
+  background: #4f46e5;
+  color: white;
+}
+
+/* --- MATERIAL PROFILE TAGS (PC) --- */
+.user-tag {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 16px;
+  margin-top: auto;
+}
+
+.user-tag small {
+  display: block;
+  color: #818cf8;
+  font-weight: 800;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.user-tag p { margin: 5px 0; font-weight: 600; font-size: 14px; }
+
+/* --- MOBILE "FIRE" OVERRIDE --- */
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  
+  .dashboard-layout { flex-direction: column; }
+
+  .sidebar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    height: 65px;
+    flex-direction: row !important;
+    padding: 0 15px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo { display: none !important; }
+
+  .sidebar nav {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex: 1;
+  }
+
+  .sidebar nav button {
+    width: 50px !important;
+    height: 50px !important;
+    justify-content: center;
+    font-size: 24px;
+    padding: 0;
+    margin: 0;
+  }
+
+  .user-tag { background: transparent; padding: 0; margin: 0; }
+  
+  .logout-lite {
+    width: 45px;
+    height: 45px;
+    background: rgba(239, 68, 68, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 20px;
+    text-decoration: none;
+    color: #f87171 !important;
+  }
+
+  .main-content { padding-bottom: 120px; }
+}/* --- GLOBAL THEME --- */
+body {
   font-family: "Inter", -apple-system, sans-serif;
   background: #f1f5f9;
   margin: 0;
