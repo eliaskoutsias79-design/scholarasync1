@@ -32,6 +32,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [events, setEvents] = useState([]);
+  const [materials, setMaterials] = useState([]); // New State
   const [view, setView] = useState("calendar"); 
   const [authMode, setAuthMode] = useState("login");
   const [authData, setAuthData] = useState({
@@ -41,11 +42,12 @@ export default function App() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showMaterialModal, setShowMaterialModal] = useState(false); // New Modal State
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [newHW, setNewHW] = useState({ title: "", subject: "", className: "" });
+  const [newMat, setNewMat] = useState({ title: "", link: "", subject: "", className: "" });
 
-  // --- GATEKEEPER LOGIC ---
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -55,7 +57,7 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) fetchProfile(session.user);
-      else { setProfile(null); setEvents([]); }
+      else { setProfile(null); setEvents([]); setMaterials([]); }
     });
 
     return () => subscription.unsubscribe();
@@ -66,6 +68,7 @@ export default function App() {
     if (!error && data) {
       setProfile(data);
       fetchEvents(data);
+      fetchMaterials(data);
     }
   };
 
@@ -82,11 +85,20 @@ export default function App() {
     })));
   };
 
+  const fetchMaterials = async (prof) => {
+    let query = supabase.from("materials").select("*");
+    if (prof.role === "student") query = query.eq("class_name", prof.user_class);
+    else if (session.user.email !== ADMIN_EMAIL) query = query.eq("teacher_id", prof.id);
+
+    const { data } = await query;
+    if (data) setMaterials(data);
+  };
+
   const handleAuth = async () => {
     const { email, password, role, userClass, teacherClasses, teacherSubjects } = authData;
     const processedClasses = teacherClasses.split(",").map(c => formatClassName(c)).join(", ");
 
-    const { data, error } = authMode === "login"
+    const { error } = authMode === "login"
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({
           email, password,
@@ -97,7 +109,6 @@ export default function App() {
     else if (authMode === "signup") alert("Registration request sent! Please wait for admin approval.");
   };
 
-  // --- RENDER LOGIN ---
   if (!session) {
     return (
       <div className="auth-container">
@@ -132,7 +143,6 @@ export default function App() {
     );
   }
 
-  // --- RENDER APPROVAL PENDING ---
   if (profile && !profile.is_approved && session.user.email !== ADMIN_EMAIL) {
     return (
       <div className="auth-container">
@@ -145,7 +155,6 @@ export default function App() {
     );
   }
 
-  // --- RENDER MAIN DASHBOARD ---
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
@@ -153,6 +162,9 @@ export default function App() {
         <nav>
           <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}>
             <span className="icon-span">📅</span><span className="desktop-only">Calendar</span>
+          </button>
+          <button className={view === "materials" ? "active" : ""} onClick={() => setView("materials")}>
+            <span className="icon-span">📚</span><span className="desktop-only">Materials</span>
           </button>
           {session.user.email === ADMIN_EMAIL && (
             <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>
@@ -177,6 +189,34 @@ export default function App() {
       <main className="main-content">
         {view === "admin" ? (
           <AdminPanel fetchProfile={() => fetchProfile(session.user)} />
+        ) : view === "materials" ? (
+          <div className="materials-container">
+             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                <h2>📚 Study Materials</h2>
+                {(profile?.role === "teacher" || session.user.email === ADMIN_EMAIL) && (
+                   <button className="main-btn" style={{width: 'auto', padding: '10px 20px'}} onClick={() => setShowMaterialModal(true)}>+ Add Material</button>
+                )}
+             </div>
+             <div className="materials-grid">
+                {materials.length === 0 ? <p>No materials uploaded yet.</p> : materials.map(m => (
+                  <div key={m.id} className="material-card">
+                    <div className="material-info">
+                      <strong>{m.title}</strong>
+                      <p>{m.subject} | {m.class_name}</p>
+                    </div>
+                    <div style={{display: 'flex', gap: '10px'}}>
+                      <a href={m.link} target="_blank" rel="noreferrer" className="main-btn" style={{width: 'auto', padding: '5px 15px', textDecoration: 'none'}}>Open</a>
+                      {(profile?.role === "teacher" || session.user.email === ADMIN_EMAIL) && (
+                        <button className="del-btn" onClick={async () => {
+                          await supabase.from("materials").delete().eq("id", m.id);
+                          fetchMaterials(profile);
+                        }}>🗑️</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+             </div>
+          </div>
         ) : (
           <div className="calendar-card">
             <FullCalendar
@@ -226,6 +266,37 @@ export default function App() {
                 setShowAddModal(false); fetchProfile(session.user);
             }}>Post</button>
             <button className="secondary-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {showMaterialModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Upload Study Material</h3>
+            <select onChange={(e) => setNewMat({ ...newMat, className: e.target.value })}>
+              <option value="">-- Class --</option>
+              {(profile?.requested_classes || "").split(",").map((c) => (
+                <option key={c} value={c.trim()}>{c.trim()}</option>
+              ))}
+            </select>
+            <select onChange={(e) => setNewMat({ ...newMat, subject: e.target.value })}>
+              <option value="">-- Subject --</option>
+              {(profile?.requested_subjects || "").split(",").map((s) => (
+                <option key={s} value={s.trim()}>{s.trim()}</option>
+              ))}
+            </select>
+            <input placeholder="Material Title (e.g. Unit 3 Vocab)" onChange={(e) => setNewMat({ ...newMat, title: e.target.value })} />
+            <input placeholder="Link (Drive, PDF, etc.)" onChange={(e) => setNewMat({ ...newMat, link: e.target.value })} />
+            <button className="main-btn" onClick={async () => {
+                if (!newMat.className || !newMat.subject || !newMat.title || !newMat.link) return alert("Fill all fields!");
+                await supabase.from("materials").insert([{
+                    title: newMat.title, subject: newMat.subject, link: newMat.link,
+                    class_name: newMat.className, teacher_id: session.user.id,
+                }]);
+                setShowMaterialModal(false); fetchMaterials(profile);
+            }}>Upload</button>
+            <button className="secondary-btn" onClick={() => setShowMaterialModal(false)}>Cancel</button>
           </div>
         </div>
       )}
