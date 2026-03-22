@@ -1,6 +1,6 @@
 /* --- GLOBAL THEME --- */
 body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: "Inter", -apple-system, sans-serif;
   background: #f1f5f9;
   margin: 0;
   color: #1e293b;
@@ -14,7 +14,7 @@ body {
   background: #f8fafc;
 }
 
-/* --- SIDEBAR (PC) --- */
+/* --- SIDEBAR (PC DEFAULT) --- */
 .sidebar {
   width: 260px;
   background: #0f172a;
@@ -33,7 +33,10 @@ body {
   background: linear-gradient(to right, #6366f1, #a855f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
 }
+
+.sidebar nav { flex: 1; }
 
 .sidebar nav button {
   display: flex;
@@ -48,6 +51,7 @@ body {
   border-radius: 12px;
   cursor: pointer;
   transition: 0.2s;
+  gap: 12px;
 }
 
 .sidebar nav button.active {
@@ -56,12 +60,46 @@ body {
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
 }
 
+/* --- MATERIAL UI TAGS (PC) --- */
+.user-tag {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 16px;
+  margin-top: auto;
+}
+
+.user-tag small {
+  display: block;
+  color: #818cf8;
+  font-weight: 800;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.user-tag p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.logout-lite {
+  background: transparent;
+  border: none;
+  color: #f87171;
+  font-size: 12px;
+  padding: 0;
+  margin-top: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* --- MAIN CONTENT --- */
 .main-content {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
-  scroll-behavior: smooth;
+  position: relative;
 }
 
 .announcement-ticker {
@@ -85,97 +123,56 @@ body {
   animation: pulse 2s infinite;
 }
 
-/* --- CALENDAR CARD --- */
-.calendar-card {
-  background: white;
-  padding: 25px;
-  border-radius: 24px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-}
-
-.fc-event { cursor: pointer; padding: 3px 6px; border-radius: 6px !important; border: none !important; }
-
-/* --- THE MODAL (The Fix for Overlap) --- */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(8px);
-  display: flex;
-  justify-content: center;
-  align-items: center; /* Desktop remains centered */
-  z-index: 9999; /* Higher than EVERYTHING */
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 24px;
-  width: 440px;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-  animation: scaleIn 0.2s ease-out;
-}
-
-/* --- MOBILE "FIRE" TRANSFORMATION --- */
+/* --- MOBILE "FIRE" OVERRIDE --- */
 @media (max-width: 768px) {
-  /* 1. Hide desktop text */
   .desktop-only { display: none !important; }
-
-  /* 2. Force the dashboard to stack */
+  
   .dashboard-layout { flex-direction: column; }
 
-  /* 3. The Dock (The Floating Bar) */
   .sidebar {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 85%; /* Narrower for a sleeker look */
-    max-width: 380px;
+    width: 90%;
+    max-width: 400px;
     height: 65px;
-    flex-direction: row !important; /* Force horizontal */
+    flex-direction: row; /* Force horizontal bar */
     padding: 0 15px;
     background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
     border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    z-index: 500;
     align-items: center;
     justify-content: space-between;
   }
 
-  /* Hide the Logo & User Info on mobile dock */
-  .logo, .user-tag p, .user-tag small { display: none !important; }
+  .logo { display: none; }
 
   .sidebar nav {
     display: flex;
     justify-content: center;
-    gap: 15px;
-    flex: 1;
+    gap: 20px;
   }
 
-  /* 4. The Buttons inside the Dock */
   .sidebar nav button {
-    width: 50px !important;
-    height: 50px !important;
+    width: 50px;
+    height: 50px;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    font-size: 24px;
+  }
+
+  .user-tag { 
+    background: transparent; 
+    padding: 0; 
+    margin: 0; 
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: transparent;
-    font-size: 22px; /* Emoji size */
-    margin: 0 !important;
-    padding: 0 !important;
   }
 
-  .sidebar nav button.active {
-    background: rgba(99, 102, 241, 0.2) !important;
-    border-radius: 15px;
-  }
-
-  /* 5. The Sign Out Button */
-  .user-tag { margin: 0; padding: 0; background: transparent; }
   .logout-lite {
     width: 45px;
     height: 45px;
@@ -184,23 +181,27 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    font-size: 20px !important;
+    font-size: 20px;
+    margin: 0;
     text-decoration: none;
-    margin: 0 !important;
   }
 
-  /* 6. Calendar & Content Spacing */
   .main-content {
-    padding: 10px;
-    padding-bottom: 120px; /* Space to scroll past dock */
+    padding: 15px;
+    padding-bottom: 120px;
   }
 
-  .calendar-card {
-    padding: 10px;
-    border-radius: 15px;
+  /* MODAL POSITIONING */
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 10vh;
+    z-index: 9999;
   }
 
-  .fc-toolbar-title { font-size: 1.1rem !important; }
+  .modal-content {
+    width: 90%;
+    max-height: 70vh;
+  }
 }
 
 /* --- ANIMATIONS --- */
@@ -210,7 +211,9 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+.calendar-card {
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
 }
