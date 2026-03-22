@@ -381,3 +381,101 @@ body {
   background-position: right 12px center;
   background-size: 16px;
 }
+
+/* --- THE ASSIGNMENT ACTION SHEET --- */
+.modal-overlay {
+  background: rgba(9, 9, 11, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: #ffffff;
+  width: 90%;
+  max-width: 440px;
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modal-content h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+
+.modal-date-badge {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+/* --- THE INPUT GROUP --- */
+.modal-content select, 
+.modal-content input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: #1e293b;
+  transition: all 0.2s;
+}
+
+.modal-content select:focus, 
+.modal-content input:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+/* --- BUTTON STRATEGY --- */
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-post {
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.btn-post:hover { background: #4f46e5; }
+.btn-post:active { transform: scale(0.98); }
+
+.btn-cancel {
+  background: #f1f5f9;
+  color: #64748b;
+  border: none;
+  padding: 16px;
+  border-radius: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel:hover { background: #e2e8f0; }
