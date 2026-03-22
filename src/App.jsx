@@ -29,6 +29,7 @@ const AVAILABLE_CLASSES = [
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [events, setEvents] = useState([]);
 
   const [authData, setAuthData] = useState({
@@ -48,23 +49,37 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        fetchEvents(session.user);
-        setTempSettings({
-          classes: session.user.user_metadata.classes || "",
-          subjects: session.user.user_metadata.subjects || "",
-          userClass: session.user.user_metadata.userClass || "",
-        });
+        fetchProfile(session.user);
       }
     });
   }, []);
 
-  const fetchEvents = async (user) => {
+  const fetchProfile = async (user) => {
+    // We get the extra data (is_approved) from our custom profiles table
+    const { data: profData, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (!error) {
+      setProfile(profData);
+      setTempSettings({
+        classes: profData.requested_classes || "",
+        subjects: profData.requested_subjects || "",
+        userClass: profData.user_class || "",
+      });
+      fetchEvents(profData);
+    }
+  };
+
+  const fetchEvents = async (prof) => {
     let query = supabase.from("assignments").select("*");
     
-    if (user.user_metadata.role === "student") {
-      query = query.eq("class_name", user.user_metadata.userClass);
+    if (prof.role === "student") {
+      query = query.eq("class_name", prof.user_class);
     } else {
-      query = query.eq("teacher_id", user.id);
+      query = query.eq("teacher_id", prof.id);
     }
 
     const { data, error } = await query;
@@ -81,47 +96,36 @@ export default function App() {
   const handleUpdateSettings = async () => {
     const formattedClasses = tempSettings.classes.split(",").map(c => formatClassName(c)).join(", ");
     
-    await supabase.auth.updateUser({
-      data: {
-        classes: formattedClasses,
-        subjects: tempSettings.subjects,
-        userClass: tempSettings.userClass,
-      },
-    });
-    alert("Settings Saved!");
+    await supabase.from("profiles").update({
+        requested_classes: formattedClasses,
+        requested_subjects: tempSettings.subjects,
+        user_class: tempSettings.userClass,
+    }).eq("id", session.user.id);
+
+    alert("Settings Update Requested!");
     window.location.reload();
   };
 
   const handleAuth = async (type) => {
     const { email, password, role, userClass, teacherClasses, teacherSubjects } = authData;
-
-    const processedTeacherClasses = teacherClasses.split(",").map(c => formatClassName(c)).join(", ");
+    const processedClasses = teacherClasses.split(",").map(c => formatClassName(c)).join(", ");
 
     const { data, error } = type === "login"
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({
           email, password,
           options: {
-            data: { role, userClass, classes: processedTeacherClasses, subjects: teacherSubjects },
+            data: { role, userClass, classes: processedClasses, subjects: teacherSubjects },
           },
         });
 
     if (error) alert(error.message);
-    else {
+    else if (data.session) {
       setSession(data.session);
-      if (data.session) fetchEvents(data.session.user);
+      fetchProfile(data.session.user);
+    } else {
+      alert("Registration successful! You will need to be approved by the admin.");
     }
-  };
-
-  // Logic for the official SCH login button
-  const handleSchLogin = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'keycloak', // Usually mapped via Keycloak/OIDC for SCH.gr
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    if (error) alert("SCH Login Error: " + error.message);
   };
 
   if (!session) {
@@ -149,26 +153,31 @@ export default function App() {
         )}
         
         <button className="main-btn" onClick={() => handleAuth("login")}>Login</button>
-        <button className="secondary-btn" onClick={() => handleAuth("signup")}>Create Account</button>
-        
-        <div className="divider">OR</div>
-        
-        {/* The SCH.gr Login Button */}
-        <button className="sch-btn" onClick={handleSchLogin}>
-          Σύνδεση μέσω ΠΣΔ (sch.gr)
-        </button>
+        <button className="secondary-btn" onClick={() => handleAuth("signup")}>Sign Up & Request Access</button>
       </div>
     );
   }
 
-  const role = session.user.user_metadata.role;
+  // If logged in but not approved yet
+  if (profile && !profile.is_approved) {
+    return (
+        <div className="auth-container">
+            <div className="waiting-screen">
+                <h2>⏳ Approval Pending</h2>
+                <p>Hello <b>{session.user.email}</b>,</p>
+                <p>Your request for <b>{profile.role.toUpperCase()}</b> access is being reviewed. Please wait for the developer to approve you in Supabase.</p>
+                <button className="logout-btn" style={{width: '100%'}} onClick={() => supabase.auth.signOut().then(() => window.location.reload())}>Logout</button>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="App">
       <div className="header">
         <div className="user-info">
-          <b>{role.toUpperCase()}</b>
-          <span>{role === "student" ? ` | ${session.user.user_metadata.userClass}` : " | My Assignments"}</span>
+          <b>{profile?.role.toUpperCase()}</b>
+          <span>{profile?.role === "student" ? ` | ${profile?.user_class}` : " | Verified Teacher"}</span>
         </div>
         <div className="nav-buttons">
           <button className="icon-btn" onClick={() => setShowSettings(true)}>⚙️ Settings</button>
@@ -181,7 +190,7 @@ export default function App() {
         initialView="dayGridMonth"
         events={events}
         dateClick={(arg) => {
-          if (role === "teacher") {
+          if (profile?.role === "teacher") {
             setSelectedDate(arg.dateStr);
             setShowAddModal(true);
           }
@@ -198,12 +207,12 @@ export default function App() {
         }}
       />
 
-      {/* --- MODALS REMAIN UNCHANGED --- */}
+      {/* --- MODALS --- */}
       {showSettings && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Update Profile</h3>
-            {role === "student" ? (
+            {profile.role === "student" ? (
               <select value={tempSettings.userClass} onChange={(e) => setTempSettings({ ...tempSettings, userClass: e.target.value })}>
                 {AVAILABLE_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -228,14 +237,14 @@ export default function App() {
             <label>Select Class</label>
             <select onChange={(e) => setNewHW({ ...newHW, className: e.target.value })}>
               <option value="">-- Choose --</option>
-              {(session.user.user_metadata.classes || "").split(",").map((c) => (
+              {(profile?.requested_classes || "").split(",").map((c) => (
                 <option key={c} value={c.trim()}>{c.trim()}</option>
               ))}
             </select>
             <label>Select Subject</label>
             <select onChange={(e) => setNewHW({ ...newHW, subject: e.target.value })}>
               <option value="">-- Choose --</option>
-              {(session.user.user_metadata.subjects || "").split(",").map((s) => (
+              {(profile?.requested_subjects || "").split(",").map((s) => (
                 <option key={s} value={s.trim()}>{s.trim()}</option>
               ))}
             </select>
@@ -249,7 +258,7 @@ export default function App() {
                     teacher_id: session.user.id,
                 }]);
                 setShowAddModal(false);
-                fetchEvents(session.user);
+                fetchProfile(session.user);
             }}>Post to Calendar</button>
             <button className="secondary-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
           </div>
@@ -266,13 +275,13 @@ export default function App() {
             <h2>{selectedEvent.title}</h2>
             <p className="due-date">📅 Due: {selectedEvent.date}</p>
             <hr />
-            {role === "student" ? (
+            {profile.role === "student" ? (
               <button className="req-btn" onClick={() => alert("Teacher notified!")}>Report Typo</button>
             ) : (
               <button className="del-btn" onClick={async () => {
                   await supabase.from("assignments").delete().eq("id", selectedEvent.id);
                   setShowViewModal(false);
-                  fetchEvents(session.user);
+                  fetchProfile(session.user);
               }}>Delete Assignment</button>
             )}
           </div>
