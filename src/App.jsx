@@ -6,7 +6,7 @@ import { supabase } from "./supabaseClient";
 import "./styles.css";
 
 // CHANGE THIS TO YOUR ACTUAL EMAIL
-const ADMIN_EMAIL = "your-email@example.com"; 
+const ADMIN_EMAIL = "eliaskoutsias79@gmail.com"; 
 
 const formatClassName = (input) => {
   const map = {
