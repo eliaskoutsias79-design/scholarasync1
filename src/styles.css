@@ -307,3 +307,35 @@ button {
 .del-btn-small:hover {
   background: #fecaca;
 }
+
+/* --- NEW AUTH TOGGLE STYLES --- */
+
+.auth-toggle-text {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.auth-toggle-text span {
+  color: #4f46e5;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 5px;
+}
+
+.auth-toggle-text span:hover {
+  color: #4338ca;
+}
+
+.signup-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
