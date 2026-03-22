@@ -48,12 +48,29 @@ export default function App() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [newHW, setNewHW] = useState({ title: "", subject: "", className: "" });
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+ useEffect(() => {
+  // 1. Check current session immediately on load
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
       setSession(session);
-      if (session) fetchProfile(session.user);
-    });
-  }, []);
+      fetchProfile(session.user);
+    }
+  });
+
+  // 2. Listen for any changes (Login, Logout, Token Refresh)
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setSession(session);
+    if (session) {
+      fetchProfile(session.user);
+    } else {
+      setProfile(null);
+      setEvents([]);
+    }
+  });
+
+  // 3. Cleanup the listener when the app closes
+  return () => subscription.unsubscribe();
+}, []);
 
   useEffect(() => {
     if (profile) {
