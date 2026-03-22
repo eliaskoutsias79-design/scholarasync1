@@ -1,13 +1,12 @@
 /* --- GLOBAL THEME --- */
 body {
-  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   background: #f1f5f9;
   margin: 0;
   color: #1e293b;
   overflow-x: hidden;
 }
 
-/* Dashboard Wrapper */
 .dashboard-layout {
   display: flex;
   height: 100vh;
@@ -23,8 +22,7 @@ body {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
   z-index: 1000;
 }
 
@@ -35,11 +33,6 @@ body {
   background: linear-gradient(to right, #6366f1, #a855f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: -1px;
-}
-
-.sidebar nav {
-  flex: 1;
 }
 
 .sidebar nav button {
@@ -50,17 +43,11 @@ body {
   background: transparent;
   color: #94a3b8;
   border: none;
-  text-align: left;
   font-size: 0.95rem;
   margin-bottom: 8px;
   border-radius: 12px;
-  transition: 0.2s;
   cursor: pointer;
-}
-
-.sidebar nav button:hover {
-  background: rgba(255,255,255,0.05);
-  color: white;
+  transition: 0.2s;
 }
 
 .sidebar nav button.active {
@@ -69,37 +56,14 @@ body {
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
 }
 
-.user-tag {
-  background: rgba(255,255,255,0.05);
-  padding: 15px;
-  border-radius: 12px;
-  margin-top: auto;
-}
-
-.user-tag small { color: #6366f1; font-weight: bold; text-transform: uppercase; font-size: 10px; }
-.user-tag p { margin: 5px 0; font-size: 14px; font-weight: 600; }
-
-.logout-lite {
-  background: transparent;
-  color: #f87171;
-  font-size: 12px;
-  padding: 0;
-  margin-top: 10px;
-  text-decoration: underline;
-  cursor: pointer;
-  border: none;
-}
-
-/* --- MAIN CONTENT AREA --- */
+/* --- MAIN CONTENT --- */
 .main-content {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
-  position: relative;
   scroll-behavior: smooth;
 }
 
-/* Announcement Ticker */
 .announcement-ticker {
   background: white;
   padding: 12px 20px;
@@ -107,7 +71,6 @@ body {
   display: flex;
   align-items: center;
   margin-bottom: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
   border: 1px solid #e2e8f0;
 }
 
@@ -122,9 +85,7 @@ body {
   animation: pulse 2s infinite;
 }
 
-.ticker-text { font-size: 14px; font-weight: 500; color: #475569; }
-
-/* --- CALENDAR CUSTOMIZATION --- */
+/* --- CALENDAR CARD --- */
 .calendar-card {
   background: white;
   padding: 25px;
@@ -133,33 +94,52 @@ body {
   border: 1px solid #e2e8f0;
 }
 
-.fc { --fc-button-bg-color: #4f46e5; --fc-border-color: #f1f5f9; }
-.fc-toolbar-title { font-size: 1.2rem !important; font-weight: 800 !important; }
-.fc-event { cursor: pointer; padding: 3px 6px; border-radius: 6px !important; border: none !important; font-weight: 500; }
-.fc-day-today { background: rgba(99, 102, 241, 0.05) !important; }
+.fc-event { cursor: pointer; padding: 3px 6px; border-radius: 6px !important; border: none !important; }
+
+/* --- THE MODAL (The Fix for Overlap) --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Desktop remains centered */
+  z-index: 9999; /* Higher than EVERYTHING */
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  animation: scaleIn 0.2s ease-out;
+}
 
 /* --- MOBILE "FIRE" TRANSFORMATION --- */
 @media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+
   .dashboard-layout { flex-direction: column; }
 
-  /* SIDEBAR BECOMES A CENTERED FLOATING DOCK */
+  /* THE FLOATING DOCK */
   .sidebar {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 92%;
-    max-width: 420px;
-    height: 70px;
+    width: 90%;
+    max-width: 400px;
+    height: 65px;
     flex-direction: row;
     padding: 0 15px;
     background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(12px);
-    border-radius: 24px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    align-items: center;
-    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 500; /* Dock stays visible, but below modals */
   }
 
   .logo, .user-tag p, .user-tag small { display: none; }
@@ -167,103 +147,63 @@ body {
   .sidebar nav {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 25px;
     flex: 1;
   }
 
   .sidebar nav button {
-    width: 50px;
-    height: 50px;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 24px;
     justify-content: center;
     padding: 0;
-    margin-bottom: 0;
-    font-size: 22px;
-    border-radius: 15px;
+    margin: 0;
   }
 
-  /* Fix Logout Button inside Dock */
+  .sidebar nav button.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+  }
+
   .user-tag { margin: 0; padding: 0; background: transparent; }
-  
   .logout-lite {
-    font-size: 18px !important;
-    text-decoration: none;
-    margin-top: 0;
-    background: rgba(239, 68, 68, 0.15);
-    padding: 10px;
-    border-radius: 12px;
+    font-size: 20px !important;
+    background: rgba(239, 68, 68, 0.2);
+    width: 45px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 12px;
+    text-decoration: none;
   }
 
-  /* Main Content Padding for Dock */
+  /* MODAL POSITIONING (CRITICAL FIX) */
+  .modal-overlay {
+    align-items: flex-start; /* Move popup to top on mobile */
+    padding-top: 15vh;        /* Keeps assignment details away from the dock */
+  }
+
+  .modal-content {
+    width: 92%;
+    max-height: 65vh; /* Stops before it hits the bottom dock */
+    overflow-y: auto;
+  }
+
   .main-content {
     padding: 15px;
-    padding-bottom: 110px;
+    padding-bottom: 120px; /* Allow scrolling past the dock */
   }
-
-  .calendar-card { padding: 15px; border-radius: 20px; }
-
-  /* Mobile Event Scaling */
-  .fc-daygrid-event { margin-top: 2px !important; padding: 2px !important; }
-  .fc-event-title { font-size: 9px !important; }
 }
 
-/* --- AUTH SCREENS --- */
-.auth-card {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 90%;
-  max-width: 400px;
-  margin: 10vh auto;
-  padding: 40px 30px;
-  background: white;
-  border-radius: 28px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-input, select {
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  transition: 0.2s;
-}
-
-input:focus { border-color: #4f46e5; outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-
-/* --- BUTTONS & ANIMATIONS --- */
-.prio-btn {
-  background: #4f46e5;
-  color: white;
-  padding: 14px;
-  border-radius: 12px;
-  font-weight: 700;
-  border: none;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.prio-btn:active { transform: scale(0.96); }
-
-.sec-btn {
-  background: #f1f5f9;
-  color: #475569;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-}
-
+/* --- ANIMATIONS --- */
 @keyframes pulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-  100% { transform: scale(1); }
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
+  from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
