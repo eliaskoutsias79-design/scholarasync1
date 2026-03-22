@@ -8,6 +8,7 @@ import "./styles.css";
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com"; 
 
 const formatClassName = (input) => {
+  if (!input) return "";
   const map = {
     "JA1": "Junior High A1", "JA2": "Junior High A2", "JA3": "Junior High A3", "JA4": "Junior High A4", "JA5": "Junior High A5",
     "JB1": "Junior High B1", "JB2": "Junior High B2", "JB3": "Junior High B3", "JB4": "Junior High B4", "JB5": "Junior High B5",
@@ -31,6 +32,7 @@ const AVAILABLE_CLASSES = [
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true); // Added loading state
   const [events, setEvents] = useState([]);
   const [view, setView] = useState("calendar"); 
   const [authMode, setAuthMode] = useState("login");
@@ -48,29 +50,27 @@ export default function App() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [newHW, setNewHW] = useState({ title: "", subject: "", className: "" });
 
- useEffect(() => {
-  // 1. Check current session immediately on load
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
+  useEffect(() => {
+    // 1. Check session on load
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      fetchProfile(session.user);
-    }
-  });
+      if (session) fetchProfile(session.user);
+      else setLoading(false);
+    });
 
-  // 2. Listen for any changes (Login, Logout, Token Refresh)
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-    setSession(session);
-    if (session) {
-      fetchProfile(session.user);
-    } else {
-      setProfile(null);
-      setEvents([]);
-    }
-  });
+    // 2. Listen for Auth Changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchProfile(session.user);
+      else {
+        setProfile(null);
+        setEvents([]);
+        setLoading(false);
+      }
+    });
 
-  // 3. Cleanup the listener when the app closes
-  return () => subscription.unsubscribe();
-}, []);
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (profile) {
@@ -86,45 +86,39 @@ export default function App() {
     const { data: profData, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
     if (!error && profData) {
       setProfile(profData);
-      fetchEvents(profData);
+      fetchEvents(profData, user.email);
     }
+    setLoading(false);
   };
 
-  const fetchEvents = async (prof) => {
-  if (!prof) return;
+  const fetchEvents = async (prof, email) => {
+    if (!prof) return;
+    let query = supabase.from("assignments").select("*");
 
-  let query = supabase.from("assignments").select("*");
+    // ADMIN VIEW: See everything
+    if (email === ADMIN_EMAIL) {
+        // No filter needed for admin
+    } 
+    // STUDENT VIEW: Linked to the Class Name
+    else if (prof.role === "student") {
+        query = query.eq("class_name", prof.user_class);
+    } 
+    // TEACHER VIEW: Show what they personally posted
+    else {
+        query = query.eq("teacher_id", prof.id);
+    }
 
-  // FIX: If you have a class assigned, you should see that class's work
-  // even if you are an Admin or Teacher.
-  if (prof.user_class) {
-    query = query.eq("class_name", prof.user_class);
-  } 
-  // Fallback: If no class is assigned (pure Teacher), show only their own posts
-  else {
-    query = query.eq("teacher_id", prof.id);
-  }
-
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error("Fetch Error:", error.message);
-    return;
-  }
-
-  if (data) {
-    setEvents(data.map(ev => ({
-      id: ev.id,
-      title: `[${ev.subject}] ${ev.title}`,
-      start: ev.due_date,
-      extendedProps: { 
-        subject: ev.subject, 
-        rawTitle: ev.title, 
-        className: ev.class_name 
-      },
-    })));
-  }
-};
+    const { data, error } = await query;
+    if (error) console.error("Fetch Error:", error.message);
+    if (data) {
+      setEvents(data.map(ev => ({
+        id: ev.id,
+        title: `[${ev.subject}] ${ev.title}`,
+        start: ev.due_date,
+        extendedProps: { subject: ev.subject, rawTitle: ev.title, className: ev.class_name },
+      })));
+    }
+  };
 
   const handleAuth = async () => {
     const { email, password, role, userClass, teacherClasses, teacherSubjects } = authData;
@@ -157,6 +151,8 @@ export default function App() {
     setShowSettings(false);
     fetchProfile(session.user);
   };
+
+  if (loading) return <div className="auth-container"><h2>Loading ScholarAsync...</h2></div>;
 
   if (!session) {
     return (
@@ -228,7 +224,7 @@ export default function App() {
           events={events}
           dateClick={(arg) => {
             const role = profile?.role?.toLowerCase().trim();
-            if ((role === "teacher" || session.user.email === ADMIN_EMAIL) && profile?.is_approved) {
+            if ((role === "teacher" || session.user.email === ADMIN_EMAIL) && (profile?.is_approved || session.user.email === ADMIN_EMAIL)) {
               setSelectedDate(arg.dateStr);
               setShowAddModal(true);
             } else {
@@ -248,7 +244,6 @@ export default function App() {
         />
       )}
 
-      {/* MODALS */}
       {showSettings && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -288,9 +283,10 @@ export default function App() {
             <input placeholder="Assignment Title" onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
             <button className="main-btn" onClick={async () => {
                 if (!newHW.className || !newHW.subject || !newHW.title) return alert("Fill all fields!");
+                const officialName = formatClassName(newHW.className); // ENSURE FORMAT MATCH
                 await supabase.from("assignments").insert([{
                     title: newHW.title, subject: newHW.subject,
-                    class_name: newHW.className, due_date: selectedDate,
+                    class_name: officialName, due_date: selectedDate,
                     teacher_id: session.user.id,
                 }]);
                 setShowAddModal(false);
