@@ -1,138 +1,232 @@
 body {
-  font-family: "Segoe UI", sans-serif;
-  background: #f8fafc;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f1f5f9;
   margin: 0;
+  color: #1e293b;
 }
+
 .App {
   padding: 20px;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: auto;
+  background: white;
+  min-height: 100vh;
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
 }
 
 /* Auth Screen */
 .auth-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 300px;
-  margin: 100px auto;
+  gap: 12px;
+  width: 340px;
+  margin: 80px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
-input,
-select,
+
+.auth-container h1 {
+  margin-bottom: 10px;
+  font-size: 24px;
+  color: #1e293b;
+}
+
+.input-label {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 5px;
+  color: #64748b;
+}
+
+input, select {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  transition: border 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+/* Buttons */
 button {
   padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-button {
+
+.main-btn {
   background: #4f46e5;
   color: white;
-  cursor: pointer;
-  border: none;
-  font-weight: bold;
 }
-.secondary {
-  background: #ecf0f1;
-  color: #333;
-  margin-top: 5px;
+
+.main-btn:hover {
+  background: #4338ca;
 }
+
+.secondary-btn {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.secondary-btn:hover {
+  background: #e2e8f0;
+}
+
+/* SCH.gr Special Button */
+.sch-btn {
+  background-color: #005a96; /* Official PSD Blue */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sch-btn:hover {
+  background-color: #004471;
+  transform: translateY(-1px);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+  margin: 10px 0;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.divider:not(:empty)::before { margin-right: .5em; }
+.divider:not(:empty)::after { margin-left: .5em; }
 
 /* Header */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ddd;
+  margin-bottom: 25px;
+  padding: 15px 20px;
+  background: #f8fafc;
+  border-radius: 10px;
 }
 
-/* Modal / Popup */
+.user-info b {
+  color: #4f46e5;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.icon-btn {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 8px 15px;
+}
+
+.logout-btn {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 8px 15px;
+}
+
+.logout-btn:hover {
+  background: #fecaca;
+}
+
+/* Calendar Styling */
+.fc { /* FullCalendar Main Variable Override */
+  --fc-button-bg-color: #4f46e5;
+  --fc-button-border-color: #4f46e5;
+  --fc-button-hover-bg-color: #4338ca;
+  --fc-today-bg-color: #f5f3ff;
+}
+
+/* Modals */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 99;
+  z-index: 1000;
 }
+
 .modal-content {
   background: white;
-  padding: 25px;
-  border-radius: 12px;
-  width: 350px;
-  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
+  padding: 30px;
+  border-radius: 16px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
-.modal-header {
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #1e293b;
+}
+
+.tag-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
 }
+
 .tag {
   background: #e0e7ff;
   color: #4338ca;
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.class-tag {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.due-date {
   font-weight: bold;
-  text-transform: uppercase;
+  color: #64748b;
+  margin: 15px 0;
 }
-.close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-}
-.req-btn {
-  width: 100%;
-  background: #10b981;
-  margin-top: 15px;
-}
-.del-btn {
-  width: 100%;
-  background: #ef4444;
-  margin-top: 15px;
-}
+
+.req-btn { background: #10b981; color: white; width: 100%; margin-top: 10px; }
+.del-btn { background: #ef4444; color: white; width: 100%; margin-top: 10px; }
+
+/* Labels for Modal inputs */
 .modal-content label {
   display: block;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 600;
   margin-top: 15px;
   margin-bottom: 5px;
-  color: #666;
+  color: #475569;
 }
 
-.modal-content input,
-.modal-content select {
+.modal-content input, .modal-content select {
   width: 100%;
   box-sizing: border-box;
-  margin-bottom: 10px;
-}
-
-.modal-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.modal-buttons button {
-  flex: 1;
-}
-
-.logout-btn {
-  background: none;
-  color: #ef4444;
-  border: 1px solid #ef4444;
-  padding: 5px 15px;
-}
-
-.logout-btn:hover {
-  background: #ef4444;
-  color: white;
 }
