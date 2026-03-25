@@ -33,22 +33,21 @@ body {
   transition: all 0.3s ease;
 }
 
-/* --- LOGO REPLACEMENT (Sidebar) --- */
 .sidebar-brand {
-  padding: 10px 0 30px 5px; /* Aligns with nav padding, more bottom spacing */
-  border-bottom: 1px solid rgba(255,255,255,0.05); /* Subtle divider */
+  padding: 10px 0 30px 5px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   margin-bottom: 20px;
   display: flex;
-  justify-content: flex-start; /* Aligns logo to the left */
+  justify-content: center; /* Centered for better branding */
   align-items: center;
 }
 
-/* The Sidebar Logo Image (Fitted to the horizontal format) */
+/* Sidebar Logo Image - Filter Removed to show real colors */
 .sidebar-logo-img {
-  max-width: 135px; /* Compact size for sidebar */
+  max-width: 150px; 
   height: auto;
-  opacity: 0.9;
-  filter: brightness(0) invert(1); /* Forces logo to be white, matching your text color */
+  opacity: 1;
+  display: block;
 }
 
 .sidebar nav { flex: 1; }
@@ -80,11 +79,11 @@ body {
   box-shadow: 0 4px 12px var(--primary-glow);
 }
 
-/* --- MATERIAL UI TAGS (PC) --- */
+/* --- USER TAG --- */
 .user-tag {
   background: rgba(255, 255, 255, 0.05);
   padding: 15px;
-  border-radius: 166px;
+  border-radius: 16px;
   margin-top: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -121,34 +120,11 @@ body {
   position: relative;
 }
 
-.announcement-ticker {
-  background: white;
-  padding: 12px 20px;
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e2e8f0;
-}
-
-.ticker-label {
-  background: var(--danger);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 800;
-  margin-right: 15px;
-  animation: pulse 2s infinite;
-}
-
-/* --- MOBILE "LIBERATION" OVERRIDE --- */
+/* --- MOBILE OVERRIDE --- */
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
-  
   .dashboard-layout { flex-direction: column; }
 
-  /* FLOATING CENTERED DOCK */
   .sidebar {
     position: fixed;
     bottom: 25px;
@@ -168,10 +144,9 @@ body {
     justify-content: space-between;
   }
 
-  /* Modified mobile logo: Centered above the dock */
   .sidebar-brand { 
     position: absolute;
-    top: -55px; /* Places logo above the dock */
+    top: -65px; 
     left: 50%;
     transform: translateX(-50%);
     padding: 0;
@@ -181,8 +156,7 @@ body {
   }
 
   .sidebar-logo-img {
-    max-width: 100px; /* Smaller mobile logo */
-    opacity: 0.9;
+    max-width: 120px;
   }
 
   .sidebar nav {
@@ -201,90 +175,10 @@ body {
     font-size: 24px;
     border-radius: 16px;
   }
-
-  /* MOBILE LOGOUT ICON */
-  .user-tag { 
-    background: transparent; 
-    padding: 0; 
-    margin: 0; 
-    border: none;
-    display: flex;
-    align-items: center;
-  }
-
-  .logout-lite {
-    width: 50px;
-    height: 50px;
-    background: rgba(239, 68, 68, 0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    font-size: 22px;
-    margin: 0;
-    text-decoration: none;
-    color: #f87171 !important;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-
+  
   .main-content {
-    padding: 15px;
     padding-bottom: 120px;
   }
-
-  /* MODALS POP OVER THE DOCK */
-  .modal-overlay {
-    align-items: flex-start;
-    padding-top: 10vh;
-    z-index: 10001; /* Higher than sidebar */
-  }
-
-  .modal-content {
-    width: 90%;
-    max-height: 75vh;
-    border-radius: 28px;
-  }
-}
-
-/* --- LIST VIEW STYLING --- */
-.task-item {
-  background: white;
-  padding: 15px;
-  border-radius: 16px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid #e2e8f0;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.task-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
-.task-subject {
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 10px;
-  color: white;
-  font-weight: 800;
-  display: inline-block;
-  margin-bottom: 5px;
-}
-
-/* --- ANIMATIONS --- */
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.9; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.calendar-card {
-  background: white;
-  padding: 20px;
-  border-radius: 24px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 /* --- THE MODERN AUTH GATEWAY --- */
@@ -293,7 +187,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #09090b; /* Deep Obsidian */
+  background-color: #09090b; 
   background-image: 
     radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
@@ -302,80 +196,43 @@ body {
 
 .auth-card {
   width: 100%;
-  max-width: 420px; /* Slightly wider auth card */
+  max-width: 420px;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 28px; /* Slightly smoother corners */
-  padding: 50px 40px; /* More vertical padding */
+  border-radius: 28px;
+  padding: 50px 40px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   text-align: center;
 }
 
-/* --- AUTH LOGO STYLING --- */
-.auth-header {
-  margin-bottom: 35px;
-}
+.auth-header { margin-bottom: 35px; }
 
+/* Auth Logo - Original Colors Restored */
 .auth-logo-main {
-  max-width: 160px; /* Primary horizontal branding */
+  max-width: 180px; 
   height: auto;
-  margin: 0 auto 10px; /* Centers and adds spacing below */
+  margin: 0 auto 15px;
   display: block;
-  opacity: 0.95;
-  filter: brightness(0) invert(1); /* Forces logo to be white, matching your dark gateway */
 }
 
 .auth-subtitle {
   color: #94a3b8;
   font-size: 0.95rem;
-  font-weight: 500;
-  letter-spacing: 0.2px;
-  margin: 0;
 }
 
-/* Auth logo for small states (approval screen) */
-.auth-logo-small {
-  max-width: 100px;
-  margin: 0 auto 20px;
-  display: block;
-  filter: brightness(0) invert(1); /* Ensure it's white */
-}
-
-.approval-status {
-  margin-bottom: 30px;
-}
-
-.approval-status h2 {
-  color: white;
-  font-size: 1.6rem;
-  font-weight: 800;
-}
-
-/* --- INPUT FIELDS --- */
-.auth-card input, 
-.auth-card select {
+/* --- INPUTS & BUTTONS --- */
+.auth-card input, .auth-card select {
   width: 100%;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 12px 16px;
   color: white;
-  font-size: 1rem;
   margin-bottom: 16px;
-  transition: all 0.2s;
-  box-sizing: border-box; /* Prevents overflow */
+  box-sizing: border-box;
 }
 
-.auth-card input:focus, 
-.auth-card select:focus {
-  outline: none;
-  border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.05);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-}
-
-/* --- BUTTONS --- */
 .main-btn {
   width: 100%;
   background: #6366f1;
@@ -383,57 +240,16 @@ body {
   border: none;
   border-radius: 12px;
   padding: 14px;
-  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.1s, background 0.2s;
-  margin-top: 8px;
+  transition: 0.2s;
 }
 
-.main-btn:hover {
-  background: #4f46e5;
-  transform: translateY(-1px);
-}
+.main-btn:hover { background: #4f46e5; transform: translateY(-1px); }
 
-.main-btn:active {
-  transform: translateY(0);
-}
-
-.auth-toggle {
-  margin-top: 24px;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.auth-toggle:hover {
-  color: #6366f1;
-  text-decoration: underline;
-}
-
-/* --- SPECIAL FIELDS FOR TEACHERS --- */
-.signup-fields {
-  animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Fix for Select dropdown icons in dark mode */
-.auth-card select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='Length19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-}
-
-/* --- THE ASSIGNMENT ACTION SHEET --- */
+/* --- MODALS --- */
 .modal-overlay {
-  background: rgba(9, 9, 11, 0.8);
+  background: rgba(9, 9, 11, 0.85);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -441,7 +257,6 @@ body {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  animation: fadeIn 0.2s ease-out;
 }
 
 .modal-content {
@@ -450,81 +265,12 @@ body {
   max-width: 440px;
   border-radius: 28px;
   padding: 32px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.modal-content h3 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  margin-bottom: 4px;
-  color: #0f172a;
-}
-
-.modal-date-badge {
-  display: inline-block;
-  background: #f1f5f9;
-  color: #64748b;
-  padding: 4px 12px;
-  border-radius: 100px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 24px;
-}
-
-/* --- THE INPUT GROUP --- */
-.modal-content select, 
-.modal-content input {
-  width: 100%;
-  background: #f8fafc;
+.calendar-card {
+  background: white;
+  padding: 20px;
+  border-radius: 24px;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 14px 18px;
-  font-size: 1rem;
-  margin-bottom: 12px;
-  color: #1e293b;
-  transition: all 0.2s;
 }
-
-.modal-content select:focus, 
-.modal-content input:focus {
-  outline: none;
-  border-color: #6366f1;
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-}
-
-/* --- BUTTON STRATEGY --- */
-.modal-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.btn-post {
-  background: #6366f1;
-  color: white;
-  border: none;
-  padding: 16px;
-  border-radius: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.btn-post:hover { background: #4f46e5; }
-.btn-post:active { transform: scale(0.98); }
-
-.btn-cancel {
-  background: #f1f5f9;
-  color: #64748b;
-  border: none;
-  padding: 16px;
-  border-radius: 16px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-cancel:hover { background: #e2e8f0; }
