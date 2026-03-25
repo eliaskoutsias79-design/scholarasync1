@@ -33,6 +33,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true); 
+  const [isReady, setIsReady] = useState(false); // THE WAIT GATEKEEPER
   const [events, setEvents] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [view, setView] = useState("calendar"); 
@@ -50,7 +51,18 @@ export default function App() {
   const [newHW, setNewHW] = useState({ title: "", subject: "", className: "" });
   const [newMat, setNewMat] = useState({ title: "", link: "", subject: "", className: "" });
 
+  // 1. INITIAL WAIT (500ms) - Ensures RLS/Auth is ready before any logic runs
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 2. AUTH & SESSION LOGIC
+  useEffect(() => {
+    if (!isReady) return; // Don't run this until the 500ms wait is over
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) fetchProfile(session.user);
@@ -67,7 +79,7 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isReady]);
 
   const fetchProfile = async (user) => {
     if (!user) return;
@@ -89,6 +101,7 @@ export default function App() {
       };
     }
     setProfile(currentProfile);
+    // Fetch data ONLY AFTER profile is set to satisfy RLS
     await Promise.all([fetchEvents(currentProfile), fetchMaterials(currentProfile)]);
     setLoading(false);
   };
@@ -146,14 +159,26 @@ export default function App() {
     }
   };
 
-  if (loading) return <div className="auth-container"><div className="text-logo">Scholar<span>Async</span></div></div>;
+  // SCREEN 1: THE WAIT (500ms)
+  if (!isReady) {
+    return <div className="auth-container"><div className="text-logo">Scholar<span>Async</span></div></div>;
+  }
+
+  // SCREEN 2: INITIAL AUTH LOADING
+  if (loading) {
+    return (
+      <div className="auth-container">
+        <div className="text-logo">Scholar<span>Async</span></div>
+        <p style={{color: 'white', marginTop: '10px'}}>Syncing Database...</p>
+      </div>
+    );
+  }
 
   if (!session) {
     return (
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            {/* TEXT LOGO REPLACEMENT */}
             <div className="text-logo">Scholar<span>Async</span></div>
             <p className="auth-subtitle">Welcome to your educational portal</p>
           </div>
@@ -207,7 +232,6 @@ export default function App() {
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          {/* SIDEBAR TEXT LOGO */}
           <div className="text-logo-sidebar">Scholar<span>Async</span></div>
         </div>
         
@@ -290,6 +314,7 @@ export default function App() {
         )}
       </main>
 
+      {/* MODALS REMAIN THE SAME */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -391,7 +416,6 @@ function AdminPanel({ fetchProfile }) {
             <div className="task-info">
               <strong>{u.email}</strong>
               <p>{u.role} | {u.user_class || "No Class Assigned"}</p>
-              {/* Added dynamic classes for badges */}
               <span className={`status-badge ${u.is_approved ? 'status-approved' : 'status-pending'}`}>
                 {u.is_approved ? "Approved ✅" : "Pending ⏳"}
               </span>
