@@ -21,7 +21,7 @@ body {
   width: 100vw;
 }
 
-/* --- SIDEBAR (PC) --- */
+/* --- SIDEBAR --- */
 .sidebar {
   width: 260px;
   background: var(--sidebar-dark);
@@ -30,24 +30,24 @@ body {
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  transition: all 0.3s ease;
 }
 
 .sidebar-brand {
-  padding: 10px 0 30px 5px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 10px 0 20px 0;
   margin-bottom: 20px;
   display: flex;
-  justify-content: center; /* Centered for better branding */
+  justify-content: center;
   align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Sidebar Logo Image - Filter Removed to show real colors */
+/* Sidebar Logo Size Fix */
 .sidebar-logo-img {
-  max-width: 150px; 
+  width: 110px; /* Adjusted size */
   height: auto;
-  opacity: 1;
   display: block;
+  object-fit: contain;
+  /* Filter removed to allow transparency and original colors */
 }
 
 .sidebar nav { flex: 1; }
@@ -68,117 +68,9 @@ body {
   transition: 0.2s;
 }
 
-.sidebar nav button:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-}
-
 .sidebar nav button.active {
   background: var(--primary);
   color: white;
-  box-shadow: 0 4px 12px var(--primary-glow);
-}
-
-/* --- USER TAG --- */
-.user-tag {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 15px;
-  border-radius: 16px;
-  margin-top: auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.user-tag small {
-  display: block;
-  color: #818cf8;
-  font-weight: 800;
-  font-size: 10px;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.user-tag p { margin: 0; font-weight: 600; font-size: 14px; }
-
-.logout-lite {
-  background: transparent;
-  border: none;
-  color: #f87171;
-  font-size: 12px;
-  padding: 5px 0;
-  margin-top: 12px;
-  text-decoration: underline;
-  cursor: pointer;
-  font-weight: 700;
-  display: inline-block;
-}
-
-/* --- MAIN CONTENT --- */
-.main-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  position: relative;
-}
-
-/* --- MOBILE OVERRIDE --- */
-@media (max-width: 768px) {
-  .desktop-only { display: none !important; }
-  .dashboard-layout { flex-direction: column; }
-
-  .sidebar {
-    position: fixed;
-    bottom: 25px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 92%;
-    max-width: 420px;
-    height: 70px;
-    flex-direction: row !important;
-    padding: 0 15px;
-    background: rgba(15, 23, 42, 0.94);
-    backdrop-filter: blur(12px);
-    border-radius: 24px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .sidebar-brand { 
-    position: absolute;
-    top: -65px; 
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0;
-    margin: 0;
-    border: none;
-    background: transparent;
-  }
-
-  .sidebar-logo-img {
-    max-width: 120px;
-  }
-
-  .sidebar nav {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    flex: 1;
-  }
-
-  .sidebar nav button {
-    width: 50px !important;
-    height: 50px !important;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
-    font-size: 24px;
-    border-radius: 16px;
-  }
-  
-  .main-content {
-    padding-bottom: 120px;
-  }
 }
 
 /* --- THE MODERN AUTH GATEWAY --- */
@@ -196,61 +88,85 @@ body {
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
-  padding: 50px 40px;
+  padding: 40px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   text-align: center;
 }
 
-.auth-header { margin-bottom: 35px; }
-
-/* Auth Logo - Original Colors Restored */
+/* Auth Logo Size Fix */
 .auth-logo-main {
-  max-width: 180px; 
+  width: 140px; /* Adjust this number to make it bigger/smaller */
   height: auto;
-  margin: 0 auto 15px;
+  margin: 0 auto 20px;
   display: block;
+  object-fit: contain;
+  /* Filter removed to fix the "white box" glitch */
 }
 
 .auth-subtitle {
   color: #94a3b8;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  margin-bottom: 30px;
 }
 
 /* --- INPUTS & BUTTONS --- */
 .auth-card input, .auth-card select {
   width: 100%;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 14px;
   color: white;
-  margin-bottom: 16px;
+  margin-bottom: 15px;
   box-sizing: border-box;
 }
 
 .main-btn {
   width: 100%;
-  background: #6366f1;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 12px;
   padding: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.2s;
 }
 
-.main-btn:hover { background: #4f46e5; transform: translateY(-1px); }
+.main-btn:hover {
+  background: #4f46e5;
+}
+
+.auth-toggle {
+  margin-top: 20px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* --- CALENDAR & CONTENT --- */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.calendar-card {
+  background: white;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+}
 
 /* --- MODALS --- */
 .modal-overlay {
-  background: rgba(9, 9, 11, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -260,17 +176,9 @@ body {
 }
 
 .modal-content {
-  background: #ffffff;
-  width: 90%;
-  max-width: 440px;
-  border-radius: 28px;
-  padding: 32px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.calendar-card {
   background: white;
-  padding: 20px;
+  width: 90%;
+  max-width: 450px;
   border-radius: 24px;
-  border: 1px solid #e2e8f0;
+  padding: 30px;
 }
