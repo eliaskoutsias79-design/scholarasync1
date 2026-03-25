@@ -4,8 +4,11 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
 
-// --- LOGO IMPORT ---
+// --- THE CRITICAL LINE ---
+// If your file is "logo.png", this works. 
+// If your file is "logo.jpg", change the end of this line to .jpg!
 import logoImg from "./logo.png"; 
+
 import "./styles.css";
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com"; 
@@ -151,13 +154,13 @@ export default function App() {
 
   if (loading) return <div className="auth-container"><h1>Loading ScholarAsync...</h1></div>;
 
-  // --- UPDATED AUTH GATEWAY ---
   if (!session) {
     return (
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <img src={logoImg} alt="ScholarAsync Logo" className="auth-logo-main" />
+            {/* Using the logoImg variable from the import above */}
+            <img src={logoImg} alt="ScholarAsync Logo" className="auth-logo-main" style={{ width: '150px', marginBottom: '10px' }} />
             <p className="auth-subtitle">Welcome to your educational portal</p>
           </div>
           
@@ -190,12 +193,11 @@ export default function App() {
     );
   }
 
-  // --- UPDATED APPROVAL SCREEN ---
   if (profile && !profile.is_approved && session?.user?.email !== ADMIN_EMAIL) {
     return (
       <div className="auth-container">
         <div className="auth-card">
-          <img src={logoImg} alt="ScholarAsync" className="auth-logo-small" />
+          <img src={logoImg} alt="ScholarAsync" style={{ width: '100px', marginBottom: '20px' }} />
           <div className="approval-status">
             <h2>⏳ Approval Pending</h2>
             <p>Contact your administrator to verify your account.</p>
@@ -209,9 +211,8 @@ export default function App() {
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
-        {/* --- UPDATED SIDEBAR LOGO --- */}
         <div className="sidebar-brand">
-          <img src={logoImg} alt="ScholarAsync Logo" className="sidebar-logo-img" />
+          <img src={logoImg} alt="Logo" style={{ width: '120px', padding: '10px' }} />
         </div>
         
         <nav>
@@ -293,7 +294,6 @@ export default function App() {
         )}
       </main>
 
-      {/* --- MODALS (Unchanged Logic) --- */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
