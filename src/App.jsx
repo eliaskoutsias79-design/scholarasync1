@@ -33,7 +33,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true); 
-  const [isReady, setIsReady] = useState(false); // THE WAIT GATEKEEPER
+  const [isReady, setIsReady] = useState(false); 
   const [events, setEvents] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [view, setView] = useState("calendar"); 
@@ -51,7 +51,7 @@ export default function App() {
   const [newHW, setNewHW] = useState({ title: "", subject: "", className: "" });
   const [newMat, setNewMat] = useState({ title: "", link: "", subject: "", className: "" });
 
-  // 1. INITIAL WAIT (500ms) - Ensures RLS/Auth is ready before any logic runs
+  // 1. INITIAL WAIT: Give the Auth system 500ms to wake up before doing anything
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsReady(true);
@@ -59,28 +59,31 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // 2. AUTH & SESSION LOGIC
+  // 2. SESSION HANDLER: Triggers fetchProfile only after isReady is true
   useEffect(() => {
-    if (!isReady) return; // Don't run this until the 500ms wait is over
+    if (!isReady) return;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      if (session?.user) fetchProfile(session.user);
+      if (session?.user) await fetchProfile(session.user);
       else setLoading(false);
-    });
+    };
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) fetchProfile(session.user);
       else { 
-        setProfile(null); setEvents([]); setMaterials([]); 
-        setLoading(false);
+        setProfile(null); setEvents([]); setMaterials([]); setLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [isReady]);
 
+  // 3. PROFILE & DATA HANDLER: The core fix for RLS visibility
   const fetchProfile = async (user) => {
     if (!user) return;
     const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
@@ -91,8 +94,7 @@ export default function App() {
     } else {
       const meta = user.user_metadata;
       currentProfile = {
-        id: user.id,
-        email: user.email,
+        id: user.id, email: user.email,
         role: meta?.role || "student",
         user_class: meta?.userClass || "Not Assigned",
         requested_classes: meta?.classes || "",
@@ -100,28 +102,36 @@ export default function App() {
         is_approved: user.email === ADMIN_EMAIL
       };
     }
+
     setProfile(currentProfile);
-    // Fetch data ONLY AFTER profile is set to satisfy RLS
-    await Promise.all([fetchEvents(currentProfile), fetchMaterials(currentProfile)]);
+    
+    // CRITICAL: We pass currentProfile directly to the fetchers to avoid state-lag
+    await Promise.all([
+      fetchEvents(currentProfile, user.id, user.email),
+      fetchMaterials(currentProfile)
+    ]);
+    
     setLoading(false);
   };
 
-  const fetchEvents = async (prof) => {
-    if (!prof || !session?.user) return;
+  const fetchEvents = async (prof, userId, userEmail) => {
+    if (!prof) return;
     let query = supabase.from("assignments").select("*");
     
     if (prof.role === "student") {
       query = query.eq("class_name", prof.user_class);
-    } else if (session.user.email !== ADMIN_EMAIL) {
-      query = query.eq("teacher_id", prof.id);
+    } else if (userEmail !== ADMIN_EMAIL) {
+      query = query.eq("teacher_id", userId);
     }
 
     const { data } = await query;
-    if (data) setEvents(data.map(ev => ({
-      id: ev.id, title: `[${ev.subject}] ${ev.title}`, start: ev.due_date,
-      extendedProps: { subject: ev.subject, rawTitle: ev.title, className: ev.class_name },
-      color: ev.subject === "Math" ? "#6366f1" : "#10b981"
-    })));
+    if (data) {
+      setEvents(data.map(ev => ({
+        id: ev.id, title: `[${ev.subject}] ${ev.title}`, start: ev.due_date,
+        extendedProps: { subject: ev.subject, rawTitle: ev.title, className: ev.class_name },
+        color: ev.subject === "Math" ? "#6366f1" : "#10b981"
+      })));
+    }
   };
 
   const fetchMaterials = async (prof) => {
@@ -159,17 +169,15 @@ export default function App() {
     }
   };
 
-  // SCREEN 1: THE WAIT (500ms)
-  if (!isReady) {
-    return <div className="auth-container"><div className="text-logo">Scholar<span>Async</span></div></div>;
-  }
+  // ---------------- RENDERING ----------------
 
-  // SCREEN 2: INITIAL AUTH LOADING
-  if (loading) {
+  if (!isReady || loading) {
     return (
       <div className="auth-container">
         <div className="text-logo">Scholar<span>Async</span></div>
-        <p style={{color: 'white', marginTop: '10px'}}>Syncing Database...</p>
+        <p style={{color: 'white', marginTop: '10px', fontSize: '0.8rem', opacity: 0.7}}>
+          INITIALIZING SECURE SESSION...
+        </p>
       </div>
     );
   }
@@ -314,7 +322,7 @@ export default function App() {
         )}
       </main>
 
-      {/* MODALS REMAIN THE SAME */}
+      {/* MODALS */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
