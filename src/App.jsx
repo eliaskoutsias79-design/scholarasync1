@@ -17,6 +17,7 @@ const AVAILABLE_CLASSES = [
 ];
 
 const formatClassName = (input) => {
+  if (!input) return "";
   const map = {
     "JA1": "Junior High A1", "JA2": "Junior High A2", "JA3": "Junior High A3", "JA4": "Junior High A4", "JA5": "Junior High A5",
     "JB1": "Junior High B1", "JB2": "Junior High B2", "JB3": "Junior High B3", "JB4": "Junior High B4", "JB5": "Junior High B5",
@@ -31,6 +32,7 @@ const formatClassName = (input) => {
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true); // Prevents "Faster than Supabase" errors
   const [events, setEvents] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [view, setView] = useState("calendar"); 
@@ -51,29 +53,32 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchProfile(session.user);
+      if (session?.user) fetchProfile(session.user);
+      else setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchProfile(session.user);
-      else { setProfile(null); setEvents([]); setMaterials([]); }
+      if (session?.user) fetchProfile(session.user);
+      else { 
+        setProfile(null); setEvents([]); setMaterials([]); 
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchProfile = async (user) => {
+    if (!user) return;
     const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
     
+    let currentProfile = null;
     if (!error && data) {
-      setProfile(data);
-      fetchEvents(data);
-      fetchMaterials(data);
+      currentProfile = data;
     } else {
-      // FALLBACK: Use Auth Metadata if DB row isn't ready yet
       const meta = user.user_metadata;
-      const fallback = {
+      currentProfile = {
         id: user.id,
         email: user.email,
         role: meta?.role || "student",
@@ -82,16 +87,21 @@ export default function App() {
         requested_subjects: meta?.subjects || "",
         is_approved: user.email === ADMIN_EMAIL
       };
-      setProfile(fallback);
-      fetchEvents(fallback);
-      fetchMaterials(fallback);
     }
+    setProfile(currentProfile);
+    await Promise.all([fetchEvents(currentProfile), fetchMaterials(currentProfile)]);
+    setLoading(false);
   };
 
   const fetchEvents = async (prof) => {
+    if (!prof || !session?.user) return;
     let query = supabase.from("assignments").select("*");
-    if (prof.role === "student") query = query.eq("class_name", prof.user_class);
-    else if (session.user.email !== ADMIN_EMAIL) query = query.eq("teacher_id", prof.id);
+    
+    if (prof.role === "student") {
+      query = query.eq("class_name", prof.user_class);
+    } else if (session.user.email !== ADMIN_EMAIL) {
+      query = query.eq("teacher_id", prof.id);
+    }
 
     const { data } = await query;
     if (data) setEvents(data.map(ev => ({
@@ -102,6 +112,7 @@ export default function App() {
   };
 
   const fetchMaterials = async (prof) => {
+    if (!prof) return;
     let query = supabase.from("materials").select("*");
     if (prof.role === "student") query = query.eq("class_name", prof.user_class);
     const { data } = await query;
@@ -110,7 +121,7 @@ export default function App() {
 
   const handleAuth = async () => {
     const { email, password, role, userClass, teacherClasses, teacherSubjects } = authData;
-    const processedClasses = teacherClasses.split(",").map(c => formatClassName(c)).join(", ");
+    const processedClasses = teacherClasses ? teacherClasses.split(",").map(c => formatClassName(c)).join(", ") : "";
 
     const { data, error } = authMode === "login"
       ? await supabase.auth.signInWithPassword({ email, password })
@@ -121,8 +132,7 @@ export default function App() {
 
     if (error) return alert(error.message);
 
-    // SYNC TO DATABASE IMMEDIATELY
-    if (authMode === "signup" && data.user) {
+    if (authMode === "signup" && data?.user) {
         await supabase.from("profiles").upsert({
             id: data.user.id,
             email: email,
@@ -130,11 +140,13 @@ export default function App() {
             user_class: role === "student" ? userClass : null,
             requested_classes: role === "teacher" ? processedClasses : null,
             requested_subjects: role === "teacher" ? teacherSubjects : null,
-            is_approved: false
+            is_approved: email === ADMIN_EMAIL
         });
-        alert("Registration request sent! Please wait for admin approval.");
+        alert("Registration request sent!");
     }
   };
+
+  if (loading) return <div className="auth-container"><h1>Loading Portal...</h1></div>;
 
   if (!session) {
     return (
@@ -170,7 +182,7 @@ export default function App() {
     );
   }
 
-  if (profile && !profile.is_approved && session.user.email !== ADMIN_EMAIL) {
+  if (profile && !profile.is_approved && session?.user?.email !== ADMIN_EMAIL) {
     return (
       <div className="auth-container">
         <div className="auth-card">
@@ -193,7 +205,7 @@ export default function App() {
           <button className={view === "materials" ? "active" : ""} onClick={() => setView("materials")}>
             <span className="icon-span">📚</span><span className="desktop-only">Materials</span>
           </button>
-          {session.user.email === ADMIN_EMAIL && (
+          {session?.user?.email === ADMIN_EMAIL && (
             <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>
               <span className="icon-span">🛡️</span><span className="desktop-only">Admin</span>
             </button>
@@ -215,12 +227,12 @@ export default function App() {
 
       <main className="main-content">
         {view === "admin" ? (
-          <AdminPanel fetchProfile={() => fetchProfile(session.user)} />
+          <AdminPanel fetchProfile={() => fetchProfile(session?.user)} />
         ) : view === "materials" ? (
           <div className="materials-container">
              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
                 <h2>📚 Study Materials</h2>
-                {(profile?.role === "teacher" || session.user.email === ADMIN_EMAIL) && (
+                {(profile?.role === "teacher" || session?.user?.email === ADMIN_EMAIL) && (
                    <button className="main-btn" style={{width: 'auto', padding: '10px 20px'}} onClick={() => setShowMaterialModal(true)}>+ Add Material</button>
                 )}
              </div>
@@ -233,7 +245,7 @@ export default function App() {
                     </div>
                     <div style={{display: 'flex', gap: '10px'}}>
                       <a href={m.link} target="_blank" rel="noreferrer" className="main-btn" style={{width: 'auto', padding: '5px 15px', textDecoration: 'none'}}>Open</a>
-                      {(profile?.role !== "student" || session.user.email === ADMIN_EMAIL) && (
+                      {(profile?.role !== "student" || session?.user?.email === ADMIN_EMAIL) && (
                         <button className="del-btn" onClick={async () => {
                           await supabase.from("materials").delete().eq("id", m.id);
                           fetchMaterials(profile);
@@ -251,7 +263,7 @@ export default function App() {
               initialView="dayGridMonth"
               events={events}
               dateClick={(arg) => {
-                if ((profile?.role === "teacher" || session.user.email === ADMIN_EMAIL) && profile?.is_approved) {
+                if ((profile?.role === "teacher" || session?.user?.email === ADMIN_EMAIL) && profile?.is_approved) {
                   setSelectedDate(arg.dateStr);
                   setShowAddModal(true);
                 }
@@ -265,7 +277,7 @@ export default function App() {
         )}
       </main>
 
-      {/* MODALS */}
+      {/* MODALS WITH EXPLICIT MAPPING TO FIX 400 ERROR */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -285,12 +297,15 @@ export default function App() {
             <input placeholder="Assignment Title" onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
             <button className="main-btn" onClick={async () => {
                 if (!newHW.className || !newHW.subject || !newHW.title) return alert("Fill all fields!");
-                await supabase.from("assignments").insert([{
-                    title: newHW.title, subject: newHW.subject,
-                    class_name: newHW.className, due_date: selectedDate,
-                    teacher_id: session.user.id,
+                const { error } = await supabase.from("assignments").insert([{
+                    title: newHW.title, 
+                    subject: newHW.subject,
+                    class_name: newHW.className, // Explicit mapping
+                    due_date: selectedDate,
+                    teacher_id: session?.user?.id, // Explicit mapping
                 }]);
-                setShowAddModal(false); fetchProfile(session.user);
+                if (error) alert(error.message);
+                else { setShowAddModal(false); fetchProfile(session?.user); }
             }}>Post</button>
             <button className="secondary-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
           </div>
@@ -311,8 +326,15 @@ export default function App() {
             <input placeholder="Subject" onChange={(e) => setNewMat({ ...newMat, subject: e.target.value })} />
             <input placeholder="Link (Drive/PDF)" onChange={(e) => setNewMat({ ...newMat, link: e.target.value })} />
             <button className="main-btn" onClick={async () => {
-                await supabase.from("materials").insert([{ ...newMat, teacher_id: session.user.id, class_name: newMat.className }]);
-                setShowMaterialModal(false); fetchMaterials(profile);
+                const { error } = await supabase.from("materials").insert([{ 
+                  title: newMat.title,
+                  subject: newMat.subject,
+                  link: newMat.link,
+                  class_name: newMat.className, // Explicit mapping
+                  teacher_id: session?.user?.id  // Explicit mapping
+                }]);
+                if (error) alert(error.message);
+                else { setShowMaterialModal(false); fetchMaterials(profile); }
             }}>Upload</button>
             <button className="secondary-btn" onClick={() => setShowMaterialModal(false)}>Cancel</button>
           </div>
@@ -326,10 +348,10 @@ export default function App() {
             <p><strong>Subject:</strong> {selectedEvent?.subject}</p>
             <p><strong>Class:</strong> {selectedEvent?.className}</p>
             <p><strong>Due:</strong> {selectedEvent?.date}</p>
-            {(profile?.role !== "student" || session.user.email === ADMIN_EMAIL) && (
+            {(profile?.role !== "student" || session?.user?.email === ADMIN_EMAIL) && (
               <button className="del-btn" onClick={async () => {
                   await supabase.from("assignments").delete().eq("id", selectedEvent.id);
-                  setShowViewModal(false); fetchProfile(session.user);
+                  setShowViewModal(false); fetchProfile(session?.user);
               }}>Delete</button>
             )}
             <button className="secondary-btn" onClick={() => setShowViewModal(false)}>Close</button>
