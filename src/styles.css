@@ -138,19 +138,26 @@ body {
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
 }
 
+/* --- ADMIN PANEL GRID (Desktop) --- */
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
 /* ============================================================ */
 /* 📱 MOBILE ONLY OVERRIDES (Triggers when screen < 850px) */
 /* ============================================================ */
 @media (max-width: 850px) {
   .dashboard-layout {
-    flex-direction: column; /* Move sidebar to top */
+    flex-direction: column;
   }
 
   .sidebar {
     width: 100%;
     height: auto;
     padding: 10px 15px;
-    flex-direction: row; /* Horizontal alignment */
+    flex-direction: row;
     align-items: center;
     justify-content: space-between;
     position: sticky;
@@ -158,7 +165,6 @@ body {
     z-index: 1001;
   }
 
-  /* Hide logo and small text on mobile to avoid overlap */
   .sidebar-brand, .user-tag small {
     display: none;
   }
@@ -175,7 +181,6 @@ body {
     font-size: 0.9rem;
   }
 
-  /* This specifically targets the "Calendar/Materials" text in App.jsx */
   .desktop-only {
     display: none; 
   }
@@ -194,7 +199,13 @@ body {
 
   .main-content {
     padding: 15px;
-    height: calc(100vh - 60px); /* Fill remaining space */
+    height: auto;
+  }
+
+  /* Fix Admin Task Cards - Stacks them so they don't look squished */
+  .task-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px;
   }
 
   /* FullCalendar Shrinkage */
@@ -204,6 +215,17 @@ body {
   }
 
   .fc { font-size: 0.75rem; }
+
+  /* Post Homework Modal - Make it take full width on phone */
+  .modal-content {
+    width: 95% !important;
+    max-width: none;
+    padding: 20px;
+  }
+
+  .modal-content input, .modal-content select {
+    font-size: 16px !important; /* Prevents iPhone Zoom */
+  }
 }
 
 /* --- UTILS --- */
@@ -226,14 +248,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 10000;
-}
-
-.modal-content {
-  background: var(--white);
-  width: 95%; /* Responsive width */
-  max-width: 480px;
-  border-radius: 28px;
-  padding: 30px;
+  padding: 15px;
 }
 
 .logout-lite {
