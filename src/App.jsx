@@ -3,12 +3,6 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
-
-// --- THE CRITICAL LINE ---
-// If your file is "logo.png", this works. 
-// If your file is "logo.jpg", change the end of this line to .jpg!
-import logoImg from "./logo.png"; 
-
 import "./styles.css";
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com"; 
@@ -152,20 +146,21 @@ export default function App() {
     }
   };
 
-  if (loading) return <div className="auth-container"><h1>Loading ScholarAsync...</h1></div>;
+  if (loading) return <div className="auth-container"><div className="text-logo">Scholar<span>Async</span></div></div>;
 
   if (!session) {
     return (
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            {/* Using the logoImg variable from the import above */}
-            <img src={logoImg} alt="ScholarAsync Logo" className="auth-logo-main" style={{ width: '150px', marginBottom: '10px' }} />
+            {/* TEXT LOGO REPLACEMENT */}
+            <div className="text-logo">Scholar<span>Async</span></div>
             <p className="auth-subtitle">Welcome to your educational portal</p>
           </div>
           
           <input type="email" placeholder="Email" onChange={e => setAuthData({ ...authData, email: e.target.value })} />
           <input type="password" placeholder="Password" onChange={e => setAuthData({ ...authData, password: e.target.value })} />
+          
           {authMode === "signup" && (
             <div className="signup-fields">
               <select onChange={e => setAuthData({ ...authData, role: e.target.value })}>
@@ -197,8 +192,8 @@ export default function App() {
     return (
       <div className="auth-container">
         <div className="auth-card">
-          <img src={logoImg} alt="ScholarAsync" style={{ width: '100px', marginBottom: '20px' }} />
-          <div className="approval-status">
+          <div className="text-logo" style={{fontSize: '1.5rem'}}>Scholar<span>Async</span></div>
+          <div className="approval-status" style={{marginTop: '20px'}}>
             <h2>⏳ Approval Pending</h2>
             <p>Contact your administrator to verify your account.</p>
           </div>
@@ -212,7 +207,8 @@ export default function App() {
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img src={logoImg} alt="Logo" style={{ width: '120px', padding: '10px' }} />
+          {/* SIDEBAR TEXT LOGO */}
+          <div className="text-logo-sidebar">Scholar<span>Async</span></div>
         </div>
         
         <nav>
