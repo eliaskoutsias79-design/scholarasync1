@@ -202,10 +202,39 @@ body {
     height: auto;
   }
 
-  /* Fix Admin Task Cards - Stacks them so they don't look squished */
+  /* --- FIXED ADMIN VIEW --- */
   .task-grid {
     grid-template-columns: 1fr !important;
     gap: 15px;
+  }
+
+  /* --- FIXED POST HOMEWORK MODAL --- */
+  .modal-content {
+    width: 95% !important;
+    max-width: none;
+    padding: 25px;
+    display: flex;
+    flex-direction: column; /* Stacks Class, Subject, Title vertically */
+    gap: 12px;
+  }
+
+  /* Ensure inputs take full width and don't squish side-by-side */
+  .modal-content input, 
+  .modal-content select {
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 16px !important; /* Prevents iPhone Zoom */
+    padding: 12px;
+  }
+
+  .modal-actions {
+    flex-direction: column; /* Stacks Post/Cancel buttons */
+    width: 100%;
+    gap: 10px;
+  }
+
+  .modal-actions button {
+    width: 100% !important;
   }
 
   /* FullCalendar Shrinkage */
@@ -213,19 +242,7 @@ body {
     flex-direction: column;
     gap: 8px;
   }
-
   .fc { font-size: 0.75rem; }
-
-  /* Post Homework Modal - Make it take full width on phone */
-  .modal-content {
-    width: 95% !important;
-    max-width: none;
-    padding: 20px;
-  }
-
-  .modal-content input, .modal-content select {
-    font-size: 16px !important; /* Prevents iPhone Zoom */
-  }
 }
 
 /* --- UTILS --- */
