@@ -3,6 +3,9 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
+
+// --- LOGO IMPORT ---
+import logoImg from "./logo.png"; 
 import "./styles.css";
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com"; 
@@ -32,7 +35,7 @@ const formatClassName = (input) => {
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true); // Prevents "Faster than Supabase" errors
+  const [loading, setLoading] = useState(true); 
   const [events, setEvents] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [view, setView] = useState("calendar"); 
@@ -146,13 +149,18 @@ export default function App() {
     }
   };
 
-  if (loading) return <div className="auth-container"><h1>Loading Portal...</h1></div>;
+  if (loading) return <div className="auth-container"><h1>Loading ScholarAsync...</h1></div>;
 
+  // --- UPDATED AUTH GATEWAY ---
   if (!session) {
     return (
       <div className="auth-container">
         <div className="auth-card">
-          <h1>🏫 School Portal</h1>
+          <div className="auth-header">
+            <img src={logoImg} alt="ScholarAsync Logo" className="auth-logo-main" />
+            <p className="auth-subtitle">Welcome to your educational portal</p>
+          </div>
+          
           <input type="email" placeholder="Email" onChange={e => setAuthData({ ...authData, email: e.target.value })} />
           <input type="password" placeholder="Password" onChange={e => setAuthData({ ...authData, password: e.target.value })} />
           {authMode === "signup" && (
@@ -182,12 +190,16 @@ export default function App() {
     );
   }
 
+  // --- UPDATED APPROVAL SCREEN ---
   if (profile && !profile.is_approved && session?.user?.email !== ADMIN_EMAIL) {
     return (
       <div className="auth-container">
         <div className="auth-card">
-          <h2>⏳ Approval Pending</h2>
-          <p>Contact your administrator to verify your account.</p>
+          <img src={logoImg} alt="ScholarAsync" className="auth-logo-small" />
+          <div className="approval-status">
+            <h2>⏳ Approval Pending</h2>
+            <p>Contact your administrator to verify your account.</p>
+          </div>
           <button className="main-btn" onClick={() => { supabase.auth.signOut(); window.location.reload(); }}>Logout</button>
         </div>
       </div>
@@ -197,7 +209,11 @@ export default function App() {
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
-        <div className="logo">ScholarAsync</div>
+        {/* --- UPDATED SIDEBAR LOGO --- */}
+        <div className="sidebar-brand">
+          <img src={logoImg} alt="ScholarAsync Logo" className="sidebar-logo-img" />
+        </div>
+        
         <nav>
           <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}>
             <span className="icon-span">📅</span><span className="desktop-only">Calendar</span>
@@ -277,7 +293,7 @@ export default function App() {
         )}
       </main>
 
-      {/* MODALS WITH EXPLICIT MAPPING TO FIX 400 ERROR */}
+      {/* --- MODALS (Unchanged Logic) --- */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -300,9 +316,9 @@ export default function App() {
                 const { error } = await supabase.from("assignments").insert([{
                     title: newHW.title, 
                     subject: newHW.subject,
-                    class_name: newHW.className, // Explicit mapping
+                    class_name: newHW.className,
                     due_date: selectedDate,
-                    teacher_id: session?.user?.id, // Explicit mapping
+                    teacher_id: session?.user?.id,
                 }]);
                 if (error) alert(error.message);
                 else { setShowAddModal(false); fetchProfile(session?.user); }
@@ -330,8 +346,8 @@ export default function App() {
                   title: newMat.title,
                   subject: newMat.subject,
                   link: newMat.link,
-                  class_name: newMat.className, // Explicit mapping
-                  teacher_id: session?.user?.id  // Explicit mapping
+                  class_name: newMat.className,
+                  teacher_id: session?.user?.id 
                 }]);
                 if (error) alert(error.message);
                 else { setShowMaterialModal(false); fetchMaterials(profile); }
