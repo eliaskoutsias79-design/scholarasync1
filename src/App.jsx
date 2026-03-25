@@ -381,6 +381,7 @@ function AdminPanel({ fetchProfile }) {
     const { data } = await supabase.from("profiles").select("*").order("is_approved", { ascending: true });
     setUsers(data || []);
   };
+
   return (
     <div className="admin-panel">
       <h2>User Management</h2>
@@ -390,12 +391,17 @@ function AdminPanel({ fetchProfile }) {
             <div className="task-info">
               <strong>{u.email}</strong>
               <p>{u.role} | {u.user_class || "No Class Assigned"}</p>
-              <p>{u.is_approved ? "Approved ✅" : "Pending ⏳"}</p>
+              {/* Added dynamic classes for badges */}
+              <span className={`status-badge ${u.is_approved ? 'status-approved' : 'status-pending'}`}>
+                {u.is_approved ? "Approved ✅" : "Pending ⏳"}
+              </span>
             </div>
             <button className="main-btn" onClick={async () => {
               await supabase.from("profiles").update({ is_approved: !u.is_approved }).eq("id", u.id);
               fetchUsers(); fetchProfile();
-            }}>Toggle Approval</button>
+            }}>
+              {u.is_approved ? "Revoke Access" : "Approve User"}
+            </button>
           </div>
         ))}
       </div>
