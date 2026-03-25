@@ -33,14 +33,22 @@ body {
   transition: all 0.3s ease;
 }
 
-.logo {
-  font-size: 1.6rem;
-  font-weight: 800;
-  margin-bottom: 2.5rem;
-  background: linear-gradient(to right, #6366f1, #a855f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -1px;
+/* --- LOGO REPLACEMENT (Sidebar) --- */
+.sidebar-brand {
+  padding: 10px 0 30px 5px; /* Aligns with nav padding, more bottom spacing */
+  border-bottom: 1px solid rgba(255,255,255,0.05); /* Subtle divider */
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start; /* Aligns logo to the left */
+  align-items: center;
+}
+
+/* The Sidebar Logo Image (Fitted to the horizontal format) */
+.sidebar-logo-img {
+  max-width: 135px; /* Compact size for sidebar */
+  height: auto;
+  opacity: 0.9;
+  filter: brightness(0) invert(1); /* Forces logo to be white, matching your text color */
 }
 
 .sidebar nav { flex: 1; }
@@ -76,7 +84,7 @@ body {
 .user-tag {
   background: rgba(255, 255, 255, 0.05);
   padding: 15px;
-  border-radius: 16px;
+  border-radius: 166px;
   margin-top: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -160,7 +168,22 @@ body {
     justify-content: space-between;
   }
 
-  .logo { display: none !important; }
+  /* Modified mobile logo: Centered above the dock */
+  .sidebar-brand { 
+    position: absolute;
+    top: -55px; /* Places logo above the dock */
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+  }
+
+  .sidebar-logo-img {
+    max-width: 100px; /* Smaller mobile logo */
+    opacity: 0.9;
+  }
 
   .sidebar nav {
     display: flex;
@@ -279,28 +302,54 @@ body {
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px; /* Slightly wider auth card */
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 40px;
+  border-radius: 28px; /* Slightly smoother corners */
+  padding: 50px 40px; /* More vertical padding */
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   text-align: center;
 }
 
-.auth-card h1 {
-  color: white;
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  margin-bottom: 8px;
+/* --- AUTH LOGO STYLING --- */
+.auth-header {
+  margin-bottom: 35px;
 }
 
-.auth-card p {
+.auth-logo-main {
+  max-width: 160px; /* Primary horizontal branding */
+  height: auto;
+  margin: 0 auto 10px; /* Centers and adds spacing below */
+  display: block;
+  opacity: 0.95;
+  filter: brightness(0) invert(1); /* Forces logo to be white, matching your dark gateway */
+}
+
+.auth-subtitle {
   color: #94a3b8;
-  font-size: 0.9rem;
-  margin-bottom: 32px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  margin: 0;
+}
+
+/* Auth logo for small states (approval screen) */
+.auth-logo-small {
+  max-width: 100px;
+  margin: 0 auto 20px;
+  display: block;
+  filter: brightness(0) invert(1); /* Ensure it's white */
+}
+
+.approval-status {
+  margin-bottom: 30px;
+}
+
+.approval-status h2 {
+  color: white;
+  font-size: 1.6rem;
+  font-weight: 800;
 }
 
 /* --- INPUT FIELDS --- */
