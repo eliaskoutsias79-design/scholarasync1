@@ -21,6 +21,32 @@ body {
   width: 100vw;
 }
 
+/* --- TEXT LOGO STYLING --- */
+/* This mimics the "ScholarAsync" look from your screenshot */
+.text-logo {
+  font-size: 2.2rem;
+  font-weight: 850;
+  color: #ffffff;
+  letter-spacing: -1.5px;
+  margin-bottom: 5px;
+  display: inline-block;
+}
+
+.text-logo span {
+  color: var(--primary); /* The purple "Async" part */
+}
+
+.text-logo-sidebar {
+  font-size: 1.6rem;
+  font-weight: 850;
+  color: #ffffff;
+  letter-spacing: -1px;
+}
+
+.text-logo-sidebar span {
+  color: #818cf8; /* Slightly lighter purple for the sidebar */
+}
+
 /* --- SIDEBAR --- */
 .sidebar {
   width: 260px;
@@ -33,21 +59,12 @@ body {
 }
 
 .sidebar-brand {
-  padding: 10px 0 20px 0;
+  padding: 15px 0 25px 0;
   margin-bottom: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Sidebar Logo Size Fix */
-.sidebar-logo-img {
-  width: 110px; /* Adjusted size */
-  height: auto;
-  display: block;
-  object-fit: contain;
-  /* Filter removed to allow transparency and original colors */
 }
 
 .sidebar nav { flex: 1; }
@@ -71,6 +88,7 @@ body {
 .sidebar nav button.active {
   background: var(--primary);
   color: white;
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 /* --- THE MODERN AUTH GATEWAY --- */
@@ -93,24 +111,15 @@ body {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
-  padding: 40px;
+  padding: 50px 40px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   text-align: center;
-}
-
-/* Auth Logo Size Fix */
-.auth-logo-main {
-  width: 140px; /* Adjust this number to make it bigger/smaller */
-  height: auto;
-  margin: 0 auto 20px;
-  display: block;
-  object-fit: contain;
-  /* Filter removed to fix the "white box" glitch */
 }
 
 .auth-subtitle {
   color: #94a3b8;
   font-size: 0.9rem;
+  margin-top: 10px;
   margin-bottom: 30px;
 }
 
@@ -124,6 +133,11 @@ body {
   color: white;
   margin-bottom: 15px;
   box-sizing: border-box;
+}
+
+.auth-card input:focus {
+  outline: none;
+  border-color: var(--primary);
 }
 
 .main-btn {
@@ -140,6 +154,7 @@ body {
 
 .main-btn:hover {
   background: #4f46e5;
+  transform: translateY(-1px);
 }
 
 .auth-toggle {
