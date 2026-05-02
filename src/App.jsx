@@ -49,7 +49,11 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [newHW, setNewHW] = useState({ title: "", subject: "", className: "" });
+  // Admin multi-class state
+  const [selectedClasses, setSelectedClasses] = useState([]);
   const [newMat, setNewMat] = useState({ title: "", link: "", subject: "", className: "" });
+
+  const isAdmin = session?.user?.email === ADMIN_EMAIL;
 
   // 1. INITIAL WAIT: Give the Auth system 500ms to wake up before doing anything
   useEffect(() => {
@@ -83,7 +87,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, [isReady]);
 
-  // 3. PROFILE & DATA HANDLER: The core fix for RLS visibility
+  // 3. PROFILE & DATA HANDLER
   const fetchProfile = async (user) => {
     if (!user) return;
     const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
@@ -105,7 +109,6 @@ export default function App() {
 
     setProfile(currentProfile);
     
-    // CRITICAL: We pass currentProfile directly to the fetchers to avoid state-lag
     await Promise.all([
       fetchEvents(currentProfile, user.id, user.email),
       fetchMaterials(currentProfile)
@@ -166,6 +169,52 @@ export default function App() {
             is_approved: email === ADMIN_EMAIL
         });
         alert("Registration request sent!");
+    }
+  };
+
+  // ---- MULTI-CLASS HELPERS (admin only) ----
+  const toggleClass = (cls) => {
+    setSelectedClasses(prev =>
+      prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls]
+    );
+  };
+
+  const selectAllClasses = () => {
+    setSelectedClasses(selectedClasses.length === AVAILABLE_CLASSES.length ? [] : [...AVAILABLE_CLASSES]);
+  };
+
+  // Post one assignment per selected class
+  const handlePostHomework = async () => {
+    if (isAdmin) {
+      if (selectedClasses.length === 0 || !newHW.subject || !newHW.title) {
+        return alert("Fill all fields and select at least one class!");
+      }
+      const inserts = selectedClasses.map(cls => ({
+        title: newHW.title,
+        subject: newHW.subject,
+        class_name: cls,
+        due_date: selectedDate,
+        teacher_id: session?.user?.id,
+      }));
+      const { error } = await supabase.from("assignments").insert(inserts);
+      if (error) alert(error.message);
+      else {
+        setShowAddModal(false);
+        setSelectedClasses([]);
+        setNewHW({ title: "", subject: "", className: "" });
+        fetchProfile(session?.user);
+      }
+    } else {
+      if (!newHW.className || !newHW.subject || !newHW.title) return alert("Fill all fields!");
+      const { error } = await supabase.from("assignments").insert([{
+        title: newHW.title, 
+        subject: newHW.subject,
+        class_name: newHW.className,
+        due_date: selectedDate,
+        teacher_id: session?.user?.id,
+      }]);
+      if (error) alert(error.message);
+      else { setShowAddModal(false); fetchProfile(session?.user); }
     }
   };
 
@@ -310,6 +359,8 @@ export default function App() {
               dateClick={(arg) => {
                 if ((profile?.role === "teacher" || session?.user?.email === ADMIN_EMAIL) && profile?.is_approved) {
                   setSelectedDate(arg.dateStr);
+                  setSelectedClasses([]);
+                  setNewHW({ title: "", subject: "", className: "" });
                   setShowAddModal(true);
                 }
               }}
@@ -327,12 +378,48 @@ export default function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Post Homework: {selectedDate}</h3>
-            <select onChange={(e) => setNewHW({ ...newHW, className: e.target.value })}>
-              <option value="">-- Class --</option>
-              {(profile?.requested_classes || profile?.user_class || "").split(",").map((c) => (
-                <option key={c} value={c.trim()}>{c.trim()}</option>
-              ))}
-            </select>
+
+            {isAdmin ? (
+              /* ---- ADMIN: multi-class selector ---- */
+              <div className="class-selector">
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                  <label style={{fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Select Classes</label>
+                  <button
+                    className="select-all-btn"
+                    onClick={selectAllClasses}
+                  >
+                    {selectedClasses.length === AVAILABLE_CLASSES.length ? "Deselect All" : "Select All"}
+                  </button>
+                </div>
+                <div className="class-checkbox-grid">
+                  {AVAILABLE_CLASSES.map(cls => (
+                    <label key={cls} className={`class-checkbox-item ${selectedClasses.includes(cls) ? "checked" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedClasses.includes(cls)}
+                        onChange={() => toggleClass(cls)}
+                        style={{display: 'none'}}
+                      />
+                      {cls}
+                    </label>
+                  ))}
+                </div>
+                {selectedClasses.length > 0 && (
+                  <p style={{fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px', fontWeight: 600}}>
+                    {selectedClasses.length} class{selectedClasses.length > 1 ? "es" : ""} selected
+                  </p>
+                )}
+              </div>
+            ) : (
+              /* ---- TEACHER: single class dropdown ---- */
+              <select onChange={(e) => setNewHW({ ...newHW, className: e.target.value })}>
+                <option value="">-- Class --</option>
+                {(profile?.requested_classes || profile?.user_class || "").split(",").map((c) => (
+                  <option key={c} value={c.trim()}>{c.trim()}</option>
+                ))}
+              </select>
+            )}
+
             <select onChange={(e) => setNewHW({ ...newHW, subject: e.target.value })}>
               <option value="">-- Subject --</option>
               {(profile?.requested_subjects || "General").split(",").map((s) => (
@@ -340,19 +427,8 @@ export default function App() {
               ))}
             </select>
             <input placeholder="Assignment Title" onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
-            <button className="main-btn" onClick={async () => {
-                if (!newHW.className || !newHW.subject || !newHW.title) return alert("Fill all fields!");
-                const { error } = await supabase.from("assignments").insert([{
-                    title: newHW.title, 
-                    subject: newHW.subject,
-                    class_name: newHW.className,
-                    due_date: selectedDate,
-                    teacher_id: session?.user?.id,
-                }]);
-                if (error) alert(error.message);
-                else { setShowAddModal(false); fetchProfile(session?.user); }
-            }}>Post</button>
-            <button className="secondary-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
+            <button className="main-btn" onClick={handlePostHomework}>Post</button>
+            <button className="secondary-btn" onClick={() => { setShowAddModal(false); setSelectedClasses([]); }}>Cancel</button>
           </div>
         </div>
       )}
