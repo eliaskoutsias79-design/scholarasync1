@@ -293,3 +293,58 @@ body {
   width: 100% !important;
   margin-top: 10px !important;
 }
+
+/* --- DARK MODE (system auto) --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-main: #0f172a;
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --white: #1e293b;
+    --input-bg: #1e293b;
+  }
+
+  body {
+    background: var(--bg-main);
+    color: var(--text-main);
+  }
+
+  .task-item {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .task-info strong {
+    color: #e2e8f0;
+  }
+
+  .modal-content {
+    background: #1e293b;
+  }
+
+  .modal-content h3 {
+    color: #e2e8f0;
+  }
+
+  .modal-content input,
+  .modal-content select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .main-content {
+    background: var(--bg-main);
+  }
+
+  .calendar-card {
+    background: #1e293b;
+    border-radius: 20px;
+    padding: 20px;
+  }
+
+  .material-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+}
