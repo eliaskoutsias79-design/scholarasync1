@@ -493,11 +493,14 @@ export default function App() {
         </div>
       )}
 
-      <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />
-    </div>
-  );
-}
+      {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
+    </div> // This closes dashboard-layout
+  ); // This closes the return
+} // This closes the App function
 
+// ============================================================
+// PASTE YOUR GradesView COMPONENT BELOW THIS LINE
+// ============================================================
 // ============================================================
 // MESSAGING VIEW
 // ============================================================
