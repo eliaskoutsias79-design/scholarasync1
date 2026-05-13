@@ -277,6 +277,8 @@ export default function App() {
           <button className={view === "materials" ? "active" : ""} onClick={() => setView("materials")}><span className="icon-span">📚</span><span className="desktop-only">Materials</span></button>
           <button className={view === "announcements" ? "active" : ""} onClick={() => setView("announcements")}><span className="icon-span">📣</span><span className="desktop-only">Announcements</span></button>
           <button className={view === "messages" ? "active" : ""} onClick={() => setView("messages")}><span className="icon-span">💬</span><span className="desktop-only">Messages</span></button>
+          {/* STEP 3: ADDED GRADES BUTTON */}
+          <button className={view === "grades" ? "active" : ""} onClick={() => setView("grades")}><span className="icon-span">📊</span><span className="desktop-only">Grades</span></button>
           {isAdmin && <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}><span className="icon-span">🛡️</span><span className="desktop-only">Admin</span></button>}
         </nav>
         <div className="user-tag">
@@ -354,6 +356,10 @@ export default function App() {
         ) : view === "messages" ? (
           <MessagingView profile={profile} session={session} isAdmin={isAdmin} showError={showError} />
 
+        /* STEP 2: ADDED GRADES VIEW LOGIC */
+        ) : view === "grades" ? (
+          <GradesView profile={profile} isAdmin={isAdmin} />
+
         ) : (
           <div className="calendar-card">
             <FullCalendar
@@ -374,6 +380,8 @@ export default function App() {
           </div>
         )}
       </main>
+    </div>
+  );
 
       {/* MODALS */}
       {showAddModal && (
@@ -875,6 +883,131 @@ function AdminPanel({ fetchProfile }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// GRADES SYSTEM COMPONENT
+// ============================================================
+
+function GradesView({ profile, isAdmin }) {
+  const [grades, setGrades] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // New Grade Form State
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeValue, setGradeValue] = useState("");
+  const [comment, setComment] = useState("");
+
+  useEffect(() => {
+    fetchGrades();
+    if (profile?.role === 'teacher' || isAdmin) {
+      fetchStudents();
+    }
+  }, [profile]);
+
+  const fetchGrades = async () => {
+    let query = supabase.from("grades").select("*, teacher:profiles!teacher_id(full_name)");
+    
+    // Students only see their own, Teachers see all for their classes
+    if (profile?.role === 'student') {
+      query = query.eq("student_id", profile.id);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+    if (!error) setGrades(data || []);
+    setLoading(false);
+  };
+
+  const fetchStudents = async () => {
+    const { data } = await supabase.from("profiles").select("id, full_name, user_class").eq("role", "student");
+    setStudents(data || []);
+  };
+
+  const submitGrade = async (e) => {
+    e.preventDefault();
+    if (!selectedStudent || !subject || !gradeValue) return alert("Fill in required fields!");
+
+    const student = students.find(s => s.id === selectedStudent);
+
+    const { error } = await supabase.from("grades").insert([{
+      student_id: selectedStudent,
+      teacher_id: profile.id,
+      subject,
+      grade_value: gradeValue,
+      comment,
+      class_name: student?.user_class || "General"
+    }]);
+
+    if (!error) {
+      setShowModal(false);
+      setSubject(""); setGradeValue(""); setComment("");
+      fetchGrades();
+    } else {
+      alert(error.message);
+    }
+  };
+
+  if (loading) return <div className="p-4">Loading grades...</div>;
+
+  return (
+    <div className="materials-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2>📊 Academic Records</h2>
+        {(profile?.role === "teacher" || isAdmin) && (
+          <button className="main-btn" style={{ width: 'auto', padding: '10px 20px' }} 
+                  onClick={() => setShowModal(true)}>+ Assign Grade</button>
+        )}
+      </div>
+
+      <div className="task-grid">
+        {grades.length === 0 ? <p>No grades recorded yet.</p> : grades.map(g => (
+          <div key={g.id} className="task-item">
+            <div className="task-info">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <strong style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>{g.subject}</strong>
+                  <p style={{ margin: '5px 0', fontSize: '0.9rem' }}>{g.comment || "No teacher comments."}</p>
+                </div>
+                <span className="status-badge status-approved" style={{ fontSize: '1.2rem', padding: '10px' }}>
+                  {g.grade_value}
+                </span>
+              </div>
+              <div style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '5px' }}>
+                <small style={{ color: 'var(--text-muted)' }}>
+                  {profile?.role === 'teacher' ? `Student: ${g.student_id.slice(0,8)}...` : `Teacher: ${g.teacher?.full_name || 'Faculty'}`}
+                </small>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* GRADE INPUT MODAL */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Assign New Grade</h3>
+            <form onSubmit={submitGrade} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <select className="main-input" value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} required>
+                <option value="">Select Student</option>
+                {students.map(s => <option key={s.id} value={s.id}>{s.full_name} ({s.user_class})</option>)}
+              </select>
+              <input className="main-input" placeholder="Subject (e.g. Math)" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+              <input className="main-input" placeholder="Grade (e.g. A, 19, 95%)" value={gradeValue} onChange={(e) => setGradeValue(e.target.value)} required />
+              <textarea className="main-input" placeholder="Comments (Optional)" value={comment} onChange={(e) => setComment(e.target.value)} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="main-btn">Save Grade</button>
+                <button type="button" className="main-btn" style={{ background: '#ccc' }} onClick={() => setShowModal(false)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
