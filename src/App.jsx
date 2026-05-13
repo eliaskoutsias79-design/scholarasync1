@@ -474,7 +474,7 @@ export default function App() {
         </div>
       )}
 
-      {showViewModal && (
+{showViewModal && (
         <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>{selectedEvent?.rawTitle}</h2>
@@ -494,16 +494,11 @@ export default function App() {
       )}
 
       {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
-    </div> // This closes dashboard-layout
-  ); // This closes the return
-} // This closes the App function
+    </div>
+  );
+}
 
-// ============================================================
-// PASTE YOUR GradesView COMPONENT BELOW THIS LINE
-// ============================================================
-// ============================================================
-// MESSAGING VIEW
-// ============================================================
+// === KEEP YOUR GradesView FUNCTION BELOW THIS LINE ===
 
 function MessagingView({ profile, session, isAdmin, showError }) {
   const [activeTab, setActiveTab] = useState("class");
