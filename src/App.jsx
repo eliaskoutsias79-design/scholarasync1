@@ -494,7 +494,7 @@ export default function App() {
       )}
 
       {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
-    </div>
+    <div>
   );
 }
 
