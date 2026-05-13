@@ -266,7 +266,7 @@ export default function App() {
     );
   }
 
-  return (
+ return (
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
@@ -277,7 +277,6 @@ export default function App() {
           <button className={view === "materials" ? "active" : ""} onClick={() => setView("materials")}><span className="icon-span">📚</span><span className="desktop-only">Materials</span></button>
           <button className={view === "announcements" ? "active" : ""} onClick={() => setView("announcements")}><span className="icon-span">📣</span><span className="desktop-only">Announcements</span></button>
           <button className={view === "messages" ? "active" : ""} onClick={() => setView("messages")}><span className="icon-span">💬</span><span className="desktop-only">Messages</span></button>
-          {/* STEP 3: ADDED GRADES BUTTON */}
           <button className={view === "grades" ? "active" : ""} onClick={() => setView("grades")}><span className="icon-span">📊</span><span className="desktop-only">Grades</span></button>
           {isAdmin && <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}><span className="icon-span">🛡️</span><span className="desktop-only">Admin</span></button>}
         </nav>
@@ -321,7 +320,6 @@ export default function App() {
               ))}
             </div>
           </div>
-
         ) : view === "announcements" ? (
           <div className="materials-container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -352,14 +350,10 @@ export default function App() {
               ))}
             </div>
           </div>
-
         ) : view === "messages" ? (
           <MessagingView profile={profile} session={session} isAdmin={isAdmin} showError={showError} />
-
-        /* STEP 2: ADDED GRADES VIEW LOGIC */
         ) : view === "grades" ? (
           <GradesView profile={profile} isAdmin={isAdmin} />
-
         ) : (
           <div className="calendar-card">
             <FullCalendar
@@ -380,6 +374,9 @@ export default function App() {
           </div>
         )}
       </main>
+      
+      {/* Ensure any toast components are inside the main div but after the main content */}
+      {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
     </div>
   );
 }
