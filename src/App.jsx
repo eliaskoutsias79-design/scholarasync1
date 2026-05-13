@@ -576,15 +576,23 @@ function MessagingView({ profile, session, isAdmin, showError }) {
     setStudents(data || []);
   };
 
-  const fetchDMs = async (otherId) => {
+ const fetchDMs = async (otherId) => {
+    if (!otherId || !session?.user?.id) return;
+
+    // We simplified the select to just '*' to stop the 'Relationship' error
     const { data, error } = await supabase
       .from("messages")
-      .select("*, sender:profiles!sender_id(full_name, role)")
+      .select("*") 
       .eq("is_class_chat", false)
       .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${session.user.id})`)
       .order("created_at");
-    if (error) showError("Failed to load messages.");
-    else setDirectMessages(data || []);
+
+    if (error) {
+      console.error("DM Error:", error.message);
+      showError("DM Fetch Failed: " + error.message);
+    } else {
+      setDirectMessages(data || []);
+    }
   };
 
   const sendClassMessage = async () => {
