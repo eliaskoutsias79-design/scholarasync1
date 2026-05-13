@@ -494,7 +494,6 @@ export default function App() {
       )}
 
       {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
-}
 
 // === KEEP YOUR GradesView FUNCTION BELOW THIS LINE ===
 
