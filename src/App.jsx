@@ -524,29 +524,35 @@ function MessagingView({ profile, session, isAdmin, showError }) {
     if (selectedStudent) fetchDMs(selectedStudent.id);
   }, [selectedStudent]);
 
-  // Real-time class chat
+  // Real-time class chat - FIXED LOGIC
   useEffect(() => {
     if (!selectedClass) return;
     const channel = supabase
       .channel("class-chat-" + selectedClass)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `class_name=eq.${selectedClass}` },
-        (payload) => setClassMessages(prev => [...prev, payload.new])
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          if (payload.new.class_name === selectedClass && payload.new.is_class_chat) {
+            setClassMessages(prev => [...prev, payload.new]);
+          }
+        }
       ).subscribe();
     return () => supabase.removeChannel(channel);
   }, [selectedClass]);
 
-  // Real-time DMs
+  // Real-time DMs - FIXED LOGIC
   useEffect(() => {
     if (!selectedStudent) return;
     const channel = supabase
-      .channel("dm-" + selectedStudent.id)
+      .channel("dm-logic")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           const msg = payload.new;
           const isRelevant =
             (msg.sender_id === session.user.id && msg.receiver_id === selectedStudent.id) ||
             (msg.sender_id === selectedStudent.id && msg.receiver_id === session.user.id);
-          if (isRelevant) setDirectMessages(prev => [...prev, msg]);
+          if (isRelevant && !msg.is_class_chat) {
+             setDirectMessages(prev => [...prev, msg]);
+          }
         }
       ).subscribe();
     return () => supabase.removeChannel(channel);
@@ -583,19 +589,25 @@ function MessagingView({ profile, session, isAdmin, showError }) {
 
   const sendClassMessage = async () => {
     if (!newMsg.trim()) return;
-    await supabase.from("messages").insert([{
-      sender_id: session.user.id, class_name: selectedClass,
-      content: newMsg.trim(), is_class_chat: true,
+    const { error } = await supabase.from("messages").insert([{
+      sender_id: session.user.id, 
+      class_name: selectedClass,
+      content: newMsg.trim(), 
+      is_class_chat: true,
     }]);
+    if (error) showError("Send failed: " + error.message);
     setNewMsg("");
   };
 
   const sendDM = async () => {
     if (!newDM.trim() || !selectedStudent) return;
-    await supabase.from("messages").insert([{
-      sender_id: session.user.id, receiver_id: selectedStudent.id,
-      content: newDM.trim(), is_class_chat: false,
+    const { error } = await supabase.from("messages").insert([{
+      sender_id: session.user.id, 
+      receiver_id: selectedStudent.id,
+      content: newDM.trim(), 
+      is_class_chat: false,
     }]);
+    if (error) showError("Send failed: " + error.message);
     setNewDM("");
   };
 
@@ -644,17 +656,9 @@ function MessagingView({ profile, session, isAdmin, showError }) {
 
       {activeTab === "direct" && (
         <div className="dm-layout">
-          {/* Student side: they can only see their teacher's messages */}
-          {profile?.role === "student" && (
-            <div className="chat-layout">
-              {directMessages.length === 0 && !selectedStudent && <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px' }}>No direct messages yet.</p>}
-              {/* For students, auto-load all their DMs */}
-              <StudentDMView profile={profile} session={session} showError={showError} />
-            </div>
-          )}
-
-          {/* Teacher/admin side: pick a student */}
-          {(canDM) && (
+          {profile?.role === "student" ? (
+             <StudentDMView profile={profile} session={session} showError={showError} />
+          ) : (
             <div className="dm-split">
               <div className="dm-sidebar">
                 <input
@@ -710,10 +714,6 @@ function MessagingView({ profile, session, isAdmin, showError }) {
   );
 }
 
-// ============================================================
-// STUDENT DM VIEW (students see messages from their teachers)
-// ============================================================
-
 function StudentDMView({ profile, session, showError }) {
   const [conversations, setConversations] = useState([]);
   const [selectedConvo, setSelectedConvo] = useState(null);
@@ -725,22 +725,29 @@ function StudentDMView({ profile, session, showError }) {
   useEffect(() => { if (selectedConvo) fetchMessages(selectedConvo.id); }, [selectedConvo]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Real-time for student DMs
+  // Real-time for student DMs & Sidebar Updates
   useEffect(() => {
-    if (!selectedConvo) return;
-    const channel = supabase.channel("student-dm-" + selectedConvo.id)
+    const channel = supabase.channel("student-dm-global")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const msg = payload.new;
-        const isRelevant =
-          (msg.sender_id === session.user.id && msg.receiver_id === selectedConvo.id) ||
-          (msg.sender_id === selectedConvo.id && msg.receiver_id === session.user.id);
-        if (isRelevant) setMessages(prev => [...prev, msg]);
+        
+        // 1. If it's for the current conversation, show the bubble
+        if (selectedConvo) {
+          const isRelevant =
+            (msg.sender_id === session.user.id && msg.receiver_id === selectedConvo.id) ||
+            (msg.sender_id === selectedConvo.id && msg.receiver_id === session.user.id);
+          if (isRelevant && !msg.is_class_chat) setMessages(prev => [...prev, msg]);
+        }
+
+        // 2. If it's a new teacher messaging, update the list
+        if (msg.receiver_id === session.user.id) {
+          fetchConversations();
+        }
       }).subscribe();
     return () => supabase.removeChannel(channel);
   }, [selectedConvo]);
 
   const fetchConversations = async () => {
-    // Get all unique teachers who have messaged this student
     const { data } = await supabase
       .from("messages")
       .select("sender_id, receiver_id")
@@ -768,7 +775,12 @@ function StudentDMView({ profile, session, showError }) {
 
   const sendMsg = async () => {
     if (!newMsg.trim() || !selectedConvo) return;
-    await supabase.from("messages").insert([{ sender_id: session.user.id, receiver_id: selectedConvo.id, content: newMsg.trim(), is_class_chat: false }]);
+    await supabase.from("messages").insert([{ 
+      sender_id: session.user.id, 
+      receiver_id: selectedConvo.id, 
+      content: newMsg.trim(), 
+      is_class_chat: false 
+    }]);
     setNewMsg("");
   };
 
