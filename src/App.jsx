@@ -266,7 +266,7 @@ export default function App() {
     );
   }
 
- return (
+return (
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
@@ -374,14 +374,8 @@ export default function App() {
           </div>
         )}
       </main>
-      
-      {/* Ensure any toast components are inside the main div but after the main content */}
-      {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
-    </div>
-  );
-}
 
-      {/* MODALS */}
+      {/* MODALS SECTION - NOW INSIDE THE DASHBOARD-LAYOUT DIV */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -399,7 +393,6 @@ export default function App() {
                     </label>
                   ))}
                 </div>
-                {selectedClasses.length > 0 && <p style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px', fontWeight: 600 }}>{selectedClasses.length} class{selectedClasses.length > 1 ? "es" : ""} selected</p>}
               </div>
             ) : (
               <select onChange={(e) => setNewHW({ ...newHW, className: e.target.value })}>
@@ -456,7 +449,6 @@ export default function App() {
                     </label>
                   ))}
                 </div>
-                {annSelectedClasses.length > 0 && <p style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px', fontWeight: 600 }}>{annSelectedClasses.length} class{annSelectedClasses.length > 1 ? "es" : ""} selected</p>}
               </div>
             ) : (
               <select onChange={(e) => setNewAnn({ ...newAnn, className: e.target.value })}>
@@ -474,7 +466,7 @@ export default function App() {
         </div>
       )}
 
-{showViewModal && (
+      {showViewModal && (
         <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>{selectedEvent?.rawTitle}</h2>
@@ -494,7 +486,9 @@ export default function App() {
       )}
 
       {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
-
+    </div>
+  );
+}
 // === KEEP YOUR GradesView FUNCTION BELOW THIS LINE ===
 
 function MessagingView({ profile, session, isAdmin, showError }) {
