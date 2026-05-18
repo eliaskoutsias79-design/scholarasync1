@@ -1,4 +1,6 @@
-/* --- THE SCHOLARASYNC CORE --- */
+/* ==========================================================================
+   1. THE SCHOLARASYNC CORE VARIABLES & BASE RESET
+   ========================================================================== */
 :root {
   --primary: #6366f1;
   --primary-hover: #4f46e5;
@@ -16,7 +18,7 @@
 
 * {
   box-sizing: border-box;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Removed catch-all wild-card transitions as they cause jumping/flickering layout calculations on render */
 }
 
 body {
@@ -25,6 +27,7 @@ body {
   margin: 0;
   color: var(--text-main);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* --- TEXT LOGO BRANDING --- */
@@ -45,11 +48,14 @@ body {
 }
 .text-logo-sidebar span { color: #818cf8; }
 
-/* --- DASHBOARD LAYOUT --- */
+/* ==========================================================================
+   2. CORE DASHBOARD LAYOUT STRUCTURAL BLOCKS
+   ========================================================================== */
 .dashboard-layout {
   display: flex;
   height: 100vh;
   width: 100vw;
+  overflow: hidden; /* Prevents outer dual page-scroll tracking wheels */
 }
 
 .sidebar {
@@ -60,6 +66,7 @@ body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-brand {
@@ -67,6 +74,11 @@ body {
   margin-bottom: 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-align: center;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar nav button {
@@ -83,6 +95,12 @@ body {
   border-radius: 14px;
   cursor: pointer;
   gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.sidebar nav button:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .sidebar nav button.active {
@@ -102,9 +120,13 @@ body {
   padding: 2.5rem;
   overflow-y: auto;
   background: var(--bg-main);
+  display: flex;
+  flex-direction: column;
 }
 
-/* --- ADMIN VIEW (POLISHED) --- */
+/* ==========================================================================
+   3. TASK MANAGEMENT GRIDS & ANNOUNCEMENTS
+   ========================================================================== */
 .task-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -117,6 +139,11 @@ body {
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.task-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
 }
 
 .task-info strong {
@@ -144,7 +171,213 @@ body {
 .status-pending { background: #fef9c3; color: #854d0e; }
 .status-approved { background: #dcfce7; color: #166534; }
 
-/* --- POST HOMEWORK MODAL (POLISHED) --- */
+/* --- ANNOUNCEMENTS --- */
+.announcements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.announcement-card {
+  background: var(--white);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.announcement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.announcement-header strong {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.ann-class-badge {
+  background: rgba(99,102,241,0.1);
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.announcement-content {
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+  word-break: break-word;
+}
+
+.announcement-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.announcement-footer small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* ==========================================================================
+   4. MESSAGING SYSTEM LAYOUT MODULES
+   ========================================================================== */
+.messaging-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+}
+
+.msg-tabs {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.msg-tab {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+.msg-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.chat-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 12px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--white);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.chat-bubble {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+}
+.chat-bubble.mine { align-self: flex-end; align-items: flex-end; }
+.chat-bubble.theirs { align-self: flex-start; align-items: flex-start; }
+
+.bubble-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+.bubble-text { padding: 10px 14px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; word-break: break-word; }
+
+.chat-bubble.mine .bubble-text { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+.chat-bubble.theirs .bubble-text { background: #f1f5f9; color: var(--text-main); border-bottom-left-radius: 4px; }
+.bubble-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+
+.chat-input-row {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.chat-input-row input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  font-size: 0.95rem;
+  background: var(--white);
+  color: var(--text-main);
+  outline: none;
+}
+.chat-input-row input:focus {
+  border-color: var(--primary);
+}
+
+/* --- DM DIRECT INBOX SPLIT COMPONENT --- */
+.dm-split {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0; /* Important container flex-shrink layout preservation rule */
+}
+
+.dm-sidebar {
+  width: 260px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.student-item {
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.student-item:hover { border-color: var(--primary); }
+.student-item.selected { background: var(--primary); border-color: var(--primary); color: white; }
+.student-item.selected small { color: rgba(255,255,255,0.8); }
+.student-item strong { font-size: 0.9rem; }
+.student-item small { font-size: 0.75rem; color: var(--text-muted); }
+
+.dm-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dm-header {
+  padding: 12px 16px;
+  background: var(--white);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.dm-header strong { font-size: 1rem; }
+.dm-header small { color: var(--text-muted); font-size: 0.8rem; }
+.dm-layout { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+/* ==========================================================================
+   5. POST HOMEWORK MODAL & FORM BUILDERS
+   ========================================================================== */
 .modal-overlay {
   background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(12px);
@@ -164,16 +397,20 @@ body {
   border-radius: 28px;
   padding: 35px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-content h3 {
   margin-top: 0;
   font-weight: 800;
   color: var(--sidebar-dark);
+  margin-bottom: 20px;
 }
 
 .modal-content input, 
-.modal-content select {
+.modal-content select,
+.modal-content textarea {
   width: 100%;
   padding: 14px;
   margin-bottom: 16px;
@@ -182,10 +419,12 @@ body {
   background: #f8fafc;
   font-size: 1rem;
   color: var(--text-main);
+  font-family: inherit;
 }
 
 .modal-content input:focus, 
-.modal-content select:focus {
+.modal-content select:focus,
+.modal-content textarea:focus {
   outline: none;
   border-color: var(--primary);
   background: var(--white);
@@ -197,7 +436,63 @@ body {
   margin-top: 10px;
 }
 
-/* --- UTILS --- */
+/* --- ADMIN MULTI-CLASS SELECTOR --- */
+.class-selector {
+  margin-bottom: 16px;
+}
+
+.class-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.class-checkbox-item {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  color: var(--text-main);
+  background: var(--white);
+}
+
+.class-checkbox-item:hover {
+  border-color: var(--primary);
+}
+
+.class-checkbox-item.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.select-all-btn {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+.select-all-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* ==========================================================================
+   6. ATOMIC UTILITY ACTIONS
+   ========================================================================== */
 .main-btn {
   background: var(--primary);
   color: var(--white);
@@ -206,6 +501,15 @@ body {
   padding: 14px 24px;
   font-weight: 700;
   cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: background 0.2s, transform 0.1s;
+}
+.main-btn:hover {
+  background: var(--primary-hover);
+}
+.main-btn:active {
+  transform: scale(0.98);
 }
 
 .logout-lite {
@@ -216,34 +520,34 @@ body {
   cursor: pointer;
   padding: 10px;
   width: 100%;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.logout-lite:hover {
+  background: var(--danger);
+  color: white;
 }
 
-/* ============================================================ */
-/* 📱 MOBILE OVERRIDES */
-/* ============================================================ */
-@media (max-width: 850px) {
-  .dashboard-layout { flex-direction: column; }
-  .sidebar {
-    width: 100%; height: auto; padding: 10px 15px;
-    flex-direction: row; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 1001;
-  }
-  .sidebar-brand, .user-tag { display: none; }
-  .sidebar nav { display: flex; gap: 5px; }
-  .sidebar nav button { width: auto; padding: 10px; margin: 0; font-size: 0.9rem; }
-  .desktop-only { display: none; }
-  .main-content { padding: 15px; }
-
-  /* Admin Fix */
-  .task-grid { grid-template-columns: 1fr !important; }
-
-  /* Modal Fix */
-  .modal-content { padding: 25px; width: 100%; }
-  .modal-actions { flex-direction: column; }
-  .modal-actions button { width: 100% !important; }
+/* FullCalendar Custom Adaptations */
+.calendar-card {
+  background: var(--white);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.material-card {
+  background: var(--white);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* --- RESTORE LOGIN SCREEN ONLY --- */
+/* ==========================================================================
+   7. IMMUTABLE SYSTEM AUTHENTICATION OUTERS
+   ========================================================================== */
 .auth-container {
   min-height: 100vh !important;
   display: flex !important;
@@ -294,7 +598,133 @@ body {
   margin-top: 10px !important;
 }
 
-/* --- DARK MODE (system auto) --- */
+/* ==========================================================================
+   8. 📱 RESPONSIVE MEDIA OVERRIDES (MOBILE FRIENDLY ENGINE)
+   ========================================================================== */
+@media (max-width: 850px) {
+  .dashboard-layout { 
+    flex-direction: column; 
+  }
+  
+  .sidebar {
+    width: 100%; 
+    height: auto; 
+    padding: 12px 20px;
+    flex-direction: row; 
+    align-items: center; 
+    justify-content: space-between;
+    position: sticky; 
+    top: 0; 
+    z-index: 1001;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .sidebar-brand, .user-tag, .text-logo-sidebar { 
+    display: none; 
+  }
+  
+  .sidebar nav { 
+    display: flex; 
+    gap: 6px; 
+    width: 100%;
+    justify-content: space-around;
+  }
+  
+  .sidebar nav button { 
+    width: auto; 
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px; 
+    margin: 0; 
+    font-size: 0.85rem; 
+    gap: 6px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  
+  .desktop-only { 
+    display: none !important; 
+  }
+  
+  .main-content { 
+    padding: 20px 16px; 
+    height: calc(100vh - 65px); /* Subtract top bar size to maintain clean container view bounds */
+  }
+
+  /* Admin System Layout Cards Stack */
+  .task-grid { 
+    grid-template-columns: 1fr !important; 
+    gap: 16px;
+  }
+  
+  .announcement-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* Full Modals Responsive Alignment Overrides */
+  .modal-overlay {
+    align-items: flex-end; /* Slides modal up native-style from bottom of mobile screens */
+    padding: 0;
+  }
+  .modal-content { 
+    padding: 24px; 
+    width: 100%; 
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    max-height: 85vh;
+  }
+  .modal-actions { 
+    flex-direction: column; 
+    gap: 10px;
+  }
+  .modal-actions button { 
+    width: 100% !important; 
+  }
+  
+  .class-checkbox-grid {
+    grid-template-columns: 1fr; /* Stack classes on narrow device layout structures */
+  }
+
+  /* Core Messaging Split Stack Fix */
+  .dm-split {
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+  }
+  
+  .dm-sidebar {
+    width: 100%;
+    max-height: 160px; /* Limits size so it doesn't push the actual chat off-screen */
+  }
+  
+  .student-list {
+    flex-direction: row; /* Horizontal scrollable list on mobile viewports */
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+    gap: 8px;
+  }
+  
+  .student-item {
+    min-width: 150px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px;
+  }
+  
+  .chat-messages {
+    min-height: 200px;
+    max-height: none; /* Let layout fill responsive viewport heights */
+  }
+}
+
+/* ==========================================================================
+   9. 🌙 PREFERS-COLOR-SCHEME DARK AUTO-MODE
+   ========================================================================== */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-main: #0f172a;
@@ -309,186 +739,53 @@ body {
     color: var(--text-main);
   }
 
-  .task-item {
+  .task-item, .material-card, .calendar-card, .announcement-card, .student-item {
     background: #1e293b;
     border-color: #334155;
   }
 
-  .task-info strong {
+  .task-info strong, .announcement-header strong {
     color: #e2e8f0;
   }
 
   .modal-content {
     background: #1e293b;
   }
-
   .modal-content h3 {
     color: #e2e8f0;
   }
-
   .modal-content input,
-  .modal-content select {
+  .modal-content select,
+  .modal-content textarea {
     background: #0f172a;
     border-color: #334155;
     color: #e2e8f0;
   }
 
-  .main-content {
-    background: var(--bg-main);
-  }
-
-  .calendar-card {
-    background: #1e293b;
-    border-radius: 20px;
-    padding: 20px;
-  }
-
-  .material-card {
-    background: #1e293b;
+  .class-checkbox-item {
+    background: #0f172a;
     border-color: #334155;
   }
-}
-
-
-/* --- ADMIN MULTI-CLASS SELECTOR --- */
-.class-selector {
-  margin-bottom: 16px;
-}
-
-.class-checkbox-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  max-height: 220px;
-  overflow-y: auto;
-  padding: 4px;
-}
-
-.class-checkbox-item {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 2px solid #e2e8f0;
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: center;
-  color: var(--text-main);
-}
-
-.class-checkbox-item.checked {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-}
-
-.select-all-btn {
-  background: transparent;
-  border: 1px solid var(--primary);
-  color: var(--primary);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* --- ANNOUNCEMENTS --- */
-.announcements-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.announcement-card {
-  background: var(--white);
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-}
-
-.announcement-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.announcement-header strong {
-  font-size: 1.1rem;
-  color: var(--text-main);
-}
-
-.ann-class-badge {
-  background: rgba(99,102,241,0.1);
-  color: var(--primary);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.announcement-content {
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin: 0 0 12px 0;
-}
-
-.announcement-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.announcement-footer small {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .announcement-card {
-    background: #1e293b;
-    border-color: #334155;
+  .class-checkbox-item.checked {
+    background: var(--primary);
+    border-color: var(--primary);
   }
-}
 
-/* --- MESSAGING --- */
-.messaging-container { display: flex; flex-direction: column; height: 100%; gap: 16px; }
-.msg-tabs { display: flex; gap: 8px; }
-.msg-tab { padding: 10px 20px; border-radius: 12px; border: 2px solid #e2e8f0; background: transparent; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
-.msg-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
-.chat-layout { display: flex; flex-direction: column; flex: 1; gap: 12px; }
-.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--white); border-radius: 16px; min-height: 300px; max-height: 450px; }
-.chat-bubble { display: flex; flex-direction: column; max-width: 70%; }
-.chat-bubble.mine { align-self: flex-end; align-items: flex-end; }
-.chat-bubble.theirs { align-self: flex-start; align-items: flex-start; }
-.bubble-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
-.bubble-text { padding: 10px 14px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; }
-.chat-bubble.mine .bubble-text { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
-.chat-bubble.theirs .bubble-text { background: #f1f5f9; color: var(--text-main); border-bottom-left-radius: 4px; }
-.bubble-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
-.chat-input-row { display: flex; gap: 10px; }
-.chat-input-row input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 0.95rem; }
-.dm-split { display: flex; gap: 16px; flex: 1; min-height: 500px; }
-.dm-sidebar { width: 220px; min-width: 180px; display: flex; flex-direction: column; }
-.student-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; }
-.student-item { padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 2px; }
-.student-item:hover { border-color: var(--primary); }
-.student-item.selected { background: var(--primary); border-color: var(--primary); color: white; }
-.student-item.selected small { color: rgba(255,255,255,0.8); }
-.student-item strong { font-size: 0.9rem; }
-.student-item small { font-size: 0.75rem; color: var(--text-muted); }
-.dm-chat { flex: 1; display: flex; flex-direction: column; gap: 12px; }
-.dm-header { padding: 12px 16px; background: var(--white); border-radius: 12px; display: flex; flex-direction: column; gap: 2px; border: 1px solid #e2e8f0; }
-.dm-header strong { font-size: 1rem; }
-.dm-header small { color: var(--text-muted); font-size: 0.8rem; }
-.dm-layout { flex: 1; }
-
-@media (prefers-color-scheme: dark) {
-  .chat-bubble.theirs .bubble-text { background: #334155; color: #e2e8f0; }
-  .chat-messages, .dm-header { background: #1e293b; border-color: #334155; }
-  .student-item { border-color: #334155; }
-  .chat-input-row input { background: #1e293b; border-color: #334155; color: #e2e8f0; }
-  .msg-tab { border-color: #334155; color: #94a3b8; }
+  .chat-bubble.theirs .bubble-text { 
+    background: #334155; 
+    color: #e2e8f0; 
+  }
+  .chat-messages, .dm-header { 
+    background: #1e293b; 
+    border-color: #334155; 
+  }
+  .chat-input-row input { 
+    background: #1e293b; 
+    border-color: #334155; 
+    color: #e2e8f0; 
+  }
+  .msg-tab { 
+    border-color: #334155; 
+    color: #94a3b8; 
+  }
 }
