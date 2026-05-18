@@ -24,7 +24,7 @@ const formatClassName = (input) => {
     "JC1": "Junior High C1", "JC2": "Junior High C2", "JC3": "Junior High C3", "JC4": "Junior High C4", "JC5": "Junior High C5",
     "HA1": "High School A1", "HA2": "High School A2", "HA3": "High School A3", "HA4": "High School A4", "HA5": "High School A5",
     "HB1": "High School B1", "HB2": "High School B2", "HB3": "High School B3", "HB4": "High School B4", "HB5": "High School B5",
-    "HC1": "High School C1", "High School C2", "High School C3", "High School C4", "High School C5",
+    "HC1": "High School C1", "HC2": "High School C2", "HC3": "High School C3", "HC4": "High School C4", "HC5": "High School C5",
   };
   return map[input.toUpperCase().trim()] || input.trim();
 };
