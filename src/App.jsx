@@ -24,7 +24,7 @@ const formatClassName = (input) => {
     "JC1": "Junior High C1", "JC2": "Junior High C2", "JC3": "Junior High C3", "JC4": "Junior High C4", "JC5": "Junior High C5",
     "HA1": "High School A1", "HA2": "High School A2", "HA3": "High School A3", "HA4": "High School A4", "HA5": "High School A5",
     "HB1": "High School B1", "HB2": "High School B2", "HB3": "High School B3", "HB4": "High School B4", "HB5": "High School B5",
-    "HC1": "High School C1", "HC2": "High School C2", "HC3": "High School C3", "HC4": "High School C4", "HC5": "High School C5",
+    "HC1": "High School C1", "High School C2", "High School C3", "High School C4", "High School C5",
   };
   return map[input.toUpperCase().trim()] || input.trim();
 };
@@ -32,7 +32,7 @@ const formatClassName = (input) => {
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [identities, setIdentities] = useState([]); 
+  const [identities, setIdentities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
   const [events, setEvents] = useState([]);
@@ -72,67 +72,87 @@ export default function App() {
 
   useEffect(() => {
     if (!isReady) return;
+    
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       if (session?.user) {
+        // Extract and list active linked account identity providers
+        const linkedProviders = session.user.identities?.map(id => id.provider) || [];
+        setIdentities(linkedProviders);
         await fetchProfile(session.user);
-        await fetchIdentities();
+      } else {
+        setLoading(false);
       }
-      else setLoading(false);
     };
     initAuth();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        await fetchProfile(session.user);
-        await fetchIdentities();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+      setSession(currentSession);
+      if (currentSession?.user) {
+        const linkedProviders = currentSession.user.identities?.map(id => id.provider) || [];
+        setIdentities(linkedProviders);
+        await fetchProfile(currentSession.user);
+      } else {
+        setProfile(null);
+        setIdentities([]);
+        setEvents([]);
+        setMaterials([]);
+        setAnnouncements([]);
+        setLoading(false);
       }
-      else { setProfile(null); setIdentities([]); setEvents([]); setMaterials([]); setAnnouncements([]); setLoading(false); }
     });
     return () => subscription.unsubscribe();
   }, [isReady]);
 
-  const fetchIdentities = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.identities) {
-      setIdentities(user.identities.map(id => id.provider));
-    }
-  };
-
   const fetchProfile = async (user) => {
     if (!user) return;
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    
-    const isSchoolLinked = user.identities?.some(id => id.provider === 'keycloak') || false;
+    try {
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      
+      const isSchoolLinked = user.identities?.some(id => id.provider === 'keycloak') || false;
+      let currentProfile = null;
 
-    let currentProfile = null;
-    if (!error && data) {
-      currentProfile = data;
-    } else {
-      const meta = user.user_metadata;
-      currentProfile = {
-        id: user.id, email: user.email, full_name: meta?.fullName || meta?.full_name || "",
-        role: meta?.role || "student", user_class: meta?.userClass || "Not Assigned",
-        requested_classes: meta?.classes || "", requested_subjects: meta?.subjects || "",
-        is_approved: user.email === ADMIN_EMAIL || isSchoolLinked
-      };
+      if (!error && data) {
+        currentProfile = data;
+      } else {
+        // Brand New Google User or Missing Row Fallback
+        const meta = user.user_metadata;
+        currentProfile = {
+          id: user.id,
+          email: user.email,
+          full_name: meta?.full_name || meta?.fullName || "Google User",
+          role: "SETUP_REQUIRED", // Flag forces the setup screen container to display
+          user_class: "Not Assigned",
+          requested_classes: "",
+          requested_subjects: "",
+          is_approved: user.email === ADMIN_EMAIL || isSchoolLinked
+        };
+      }
+      
+      setProfile(currentProfile);
+
+      // Only attempt data fetches if user isn't stuck behind onboarding walls
+      if (currentProfile.role !== "SETUP_REQUIRED") {
+        await Promise.all([
+          fetchEvents(currentProfile, user.id, user.email).catch(e => console.error(e)),
+          fetchMaterials(currentProfile).catch(e => console.error(e)),
+          fetchAnnouncements(currentProfile).catch(e => console.error(e)),
+        ]);
+      }
+    } catch (err) {
+      console.error("Profile parsing issue:", err);
+    } finally {
+      setLoading(false);
     }
-    setProfile(currentProfile);
-    await Promise.all([
-      fetchEvents(currentProfile, user.id, user.email),
-      fetchMaterials(currentProfile),
-      fetchAnnouncements(currentProfile),
-    ]);
-    setLoading(false);
   };
 
   const fetchEvents = async (prof, userId, userEmail) => {
-    if (!prof) return;
+    if (!prof || prof.role === "SETUP_REQUIRED") return;
     let query = supabase.from("assignments").select("*");
     if (prof.role === "student") query = query.eq("class_name", prof.user_class);
     else if (userEmail !== ADMIN_EMAIL) query = query.eq("teacher_id", userId);
-    const { data, error } = query;
+    const { data, error } = await query;
     if (error) { showError("Failed to load assignments. Please refresh."); return; }
     if (data) {
       setEvents(data.map(ev => ({
@@ -144,36 +164,21 @@ export default function App() {
   };
 
   const fetchMaterials = async (prof) => {
-    if (!prof) return;
+    if (!prof || prof.role === "SETUP_REQUIRED") return;
     let query = supabase.from("materials").select("*");
     if (prof.role === "student") query = query.eq("class_name", prof.user_class);
-    const { data, error } = query;
+    const { data, error } = await query;
     if (error) { showError("Failed to load materials. Please refresh."); return; }
     if (data) setMaterials(data);
   };
 
   const fetchAnnouncements = async (prof) => {
-    if (!prof) return;
+    if (!prof || prof.role === "SETUP_REQUIRED") return;
     let query = supabase.from("announcements").select("*").order("created_at", { ascending: false });
     if (prof.role === "student") query = query.eq("class_name", prof.user_class);
-    const { data, error } = query;
+    const { data, error } = await query;
     if (error) { showError("Failed to load announcements. Please refresh."); return; }
     if (data) setAnnouncements(data);
-  };
-
-  const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin }
-    });
-  };
-
-  const linkSchoolAccount = async () => {
-    const { error } = await supabase.auth.linkIdentity({
-      provider: 'keycloak', 
-      options: { redirectTo: window.location.origin }
-    });
-    if (error) alert("Linking failed: " + error.message);
   };
 
   const handleAuth = async () => {
@@ -198,7 +203,92 @@ export default function App() {
     }
   };
 
-  // ---------------- RENDERING ----------------
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (error) showError("Google authentication failed: " + error.message);
+  };
+
+  const handlePostGoogleOnboarding = async () => {
+    if (!profile || !session?.user) return;
+    setLoading(true);
+
+    const { role, userClass, teacherClasses, teacherSubjects } = authData;
+    const processedClasses = teacherClasses ? teacherClasses.split(",").map(c => formatClassName(c)).join(", ") : "";
+    
+    const isSchoolLinked = identities.includes('keycloak');
+
+    const finalizedProfile = {
+      id: session.user.id,
+      email: session.user.email,
+      full_name: profile.full_name,
+      role: role,
+      user_class: role === "student" ? userClass : null,
+      requested_classes: role === "teacher" ? processedClasses : null,
+      requested_subjects: role === "teacher" ? teacherSubjects : null,
+      is_approved: session.user.email === ADMIN_EMAIL || isSchoolLinked
+    };
+
+    const { error } = await supabase.from("profiles").upsert(finalizedProfile);
+    if (error) {
+      alert("Registration failed to submit: " + error.message);
+      setLoading(false);
+    } else {
+      await fetchProfile(session.user);
+    }
+  };
+
+  const linkSchoolAccount = async () => {
+    const { error } = await supabase.auth.linkIdentity({
+      provider: 'keycloak', // OIDC protocol used by sso.sch.gr setup
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (error) showError("SSO link authorization failed: " + error.message);
+  };
+
+  const toggleClass = (cls) => setSelectedClasses(prev => prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls]);
+  const selectAllClasses = () => setSelectedClasses(selectedClasses.length === AVAILABLE_CLASSES.length ? [] : [...AVAILABLE_CLASSES]);
+  const toggleAnnClass = (cls) => setAnnSelectedClasses(prev => prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls]);
+  const selectAllAnnClasses = () => setAnnSelectedClasses(annSelectedClasses.length === AVAILABLE_CLASSES.length ? [] : [...AVAILABLE_CLASSES]);
+
+  const handlePostHomework = async () => {
+    if (isAdmin) {
+      if (selectedClasses.length === 0 || !newHW.subject || !newHW.title) return alert("Fill all fields and select at least one class!");
+      const inserts = selectedClasses.map(cls => ({ title: newHW.title, subject: newHW.subject, class_name: cls, due_date: selectedDate, teacher_id: session?.user?.id }));
+      const { error } = await supabase.from("assignments").insert(inserts);
+      if (error) showError("Failed to post homework. Please try again.");
+      else { setShowAddModal(false); setSelectedClasses([]); setNewHW({ title: "", subject: "", className: "" }); fetchProfile(session?.user); }
+    } else {
+      if (!newHW.className || !newHW.subject || !newHW.title) return alert("Fill all fields!");
+      const { error } = await supabase.from("assignments").insert([{ title: newHW.title, subject: newHW.subject, class_name: newHW.className, due_date: selectedDate, teacher_id: session?.user?.id }]);
+      if (error) showError("Failed to post homework. Please try again.");
+      else { setShowAddModal(false); fetchProfile(session?.user); }
+    }
+  };
+
+  const handlePostAnnouncement = async () => {
+    if (!newAnn.title || !newAnn.content) return alert("Fill in the title and content!");
+    if (isAdmin) {
+      if (annSelectedClasses.length === 0) return alert("Select at least one class!");
+      const inserts = annSelectedClasses.map(cls => ({ title: newAnn.title, content: newAnn.content, class_name: cls, teacher_id: session?.user?.id }));
+      const { error } = await supabase.from("announcements").insert(inserts);
+      if (error) showError("Failed to post announcement. Please try again.");
+      else { setShowAnnouncementModal(false); setAnnSelectedClasses([]); setNewAnn({ title: "", content: "", className: "" }); fetchAnnouncements(profile); }
+    } else {
+      if (!newAnn.className) return alert("Select a class!");
+      const { error } = await supabase.from("announcements").insert([{ title: newAnn.title, content: newAnn.content, class_name: newAnn.className, teacher_id: session?.user?.id }]);
+      if (error) showError("Failed to post announcement. Please try again.");
+      else { setShowAnnouncementModal(false); setNewAnn({ title: "", content: "", className: "" }); fetchAnnouncements(profile); }
+    }
+  };
+
+  // ---------------- RENDERING GUARDS ----------------
 
   if (!isReady || loading) {
     return (
@@ -217,37 +307,39 @@ export default function App() {
             <div className="text-logo">Scholar<span>Async</span></div>
             <p className="auth-subtitle">Welcome to your educational portal</p>
           </div>
-          
-          <button className="main-btn" style={{ background: '#fff', color: '#444', border: '1px solid #ddd', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }} 
-            onClick={signInWithGoogle}>
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G"/>
-            Continue with Google
-          </button>
-
-          <div style={{ textAlign: 'center', margin: '10px 0', fontSize: '0.8rem', color: '#aaa' }}>OR USE EMAIL</div>
-
-          <input type="email" placeholder="Email" onChange={e => setAuthData({ ...authData, email: e.target.value })} />
-          <input type="password" placeholder="Password" onChange={e => setAuthData({ ...authData, password: e.target.value })} />
+          <input type="email" placeholder="Email" value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} />
+          <input type="password" placeholder="Password" value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} />
           {authMode === "signup" && (
             <div className="signup-fields">
-              <input placeholder="Full Name" onChange={e => setAuthData({ ...authData, fullName: e.target.value })} />
-              <select onChange={e => setAuthData({ ...authData, role: e.target.value })}>
+              <input placeholder="Full Name" value={authData.fullName} onChange={e => setAuthData({ ...authData, fullName: e.target.value })} />
+              <select value={authData.role} onChange={e => setAuthData({ ...authData, role: e.target.value })}>
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
               </select>
               {authData.role === "student" ? (
-                <select onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
+                <select value={authData.userClass} onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
                   {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               ) : (
                 <>
-                  <input placeholder="Classes (e.g. JA1, HA2)" onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })} />
-                  <input placeholder="Subjects (e.g. Math, History)" onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
+                  <input placeholder="Classes (e.g. JA1, HA2)" value={authData.teacherClasses} onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })} />
+                  <input placeholder="Subjects (e.g. Math, History)" value={authData.teacherSubjects} onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
                 </>
               )}
             </div>
           )}
           <button className="main-btn" onClick={handleAuth}>{authMode === "login" ? "Login" : "Request Access"}</button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', width: '100%' }}>
+            <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #444' }} />
+            <span style={{ color: '#aaa', padding: '0 10px', fontSize: '0.85rem' }}>OR</span>
+            <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #444' }} />
+          </div>
+
+          <button className="main-btn google-btn" onClick={handleGoogleLogin} style={{ background: '#fff', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.2rem' }}>🌐</span> Continue with Google
+          </button>
+
           <p className="auth-toggle" onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
             {authMode === "login" ? "Don't have an account? Create one" : "Already have an account? Login here"}
           </p>
@@ -256,30 +348,62 @@ export default function App() {
     );
   }
 
+  // Google First-Time Login Interceptor Screen
+  if (profile && profile.role === "SETUP_REQUIRED") {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="text-logo">Scholar<span>Async</span></div>
+            <p className="auth-subtitle">Finish setting up your account</p>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px', width: '100%' }}>
+            <label style={{ fontSize: '0.9rem', color: '#ccc', textAlign: 'left' }}>
+              Signing in as: <strong style={{ color: '#fff' }}>{profile.full_name}</strong>
+            </label>
+            
+            <select className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} value={authData.role} onChange={e => setAuthData({ ...authData, role: e.target.value })}>
+              <option value="student">I am a Student</option>
+              <option value="teacher">I am a Teacher</option>
+            </select>
+
+            {authData.role === "student" ? (
+              <select className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} value={authData.userClass} onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
+                {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : (
+              <>
+                <input className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} placeholder="Classes you teach (e.g. JA1, JB2)" value={authData.teacherClasses} onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })} />
+                <input className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} placeholder="Subjects (e.g. Math, Physics)" value={authData.teacherSubjects} onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
+              </>
+            )}
+
+            <button className="main-btn" onClick={handlePostGoogleOnboarding}>
+              Complete Registration
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (profile && !profile.is_approved && session?.user?.email !== ADMIN_EMAIL) {
-    const hasLinkedSchool = identities.includes('keycloak');
     return (
       <div className="auth-container">
         <div className="auth-card">
           <div className="text-logo" style={{ fontSize: '1.5rem' }}>Scholar<span>Async</span></div>
           <div className="approval-status" style={{ marginTop: '20px' }}>
-            <h2>{hasLinkedSchool ? "⏳ Approval Pending" : "🛡️ Verify Identity"}</h2>
-            <p>{hasLinkedSchool 
-              ? "Your school account is linked. An admin will review your profile shortly." 
-              : "To access grades and homework, you must link your official school account."}</p>
+            <h2>⏳ Approval Pending</h2>
+            <p>Contact your administrator to verify your account.</p>
           </div>
-          {!hasLinkedSchool && (
-            <button className="main-btn" style={{ background: '#2563eb', marginBottom: '10px' }} onClick={linkSchoolAccount}>
-              🔗 Link @sch.gr Account
-            </button>
-          )}
           <button className="main-btn" onClick={() => { supabase.auth.signOut(); window.location.reload(); }}>Logout</button>
         </div>
       </div>
     );
   }
 
-return (
+  return (
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
@@ -294,9 +418,18 @@ return (
           {isAdmin && <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}><span className="icon-span">🛡️</span><span className="desktop-only">Admin</span></button>}
         </nav>
         <div className="user-tag">
-          <div className="desktop-only">
+          <div className="desktop-only" style={{ width: '100%', marginBottom: '10px' }}>
             <small>{profile?.role?.toUpperCase()}</small>
-            <p>{profile?.full_name || profile?.user_class || "Faculty"}</p>
+            <p style={{ margin: '2px 0 8px 0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              {profile?.full_name || "Faculty"}
+            </p>
+            
+            {/* Renders linking target button conditionally until identity verification match occurs */}
+            {!identities.includes('keycloak') && (
+              <button onClick={linkSchoolAccount} style={{ background: '#3b82f6', color: '#fff', fontSize: '0.7rem', padding: '4px 8px', border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%' }}>
+                🔗 Link School Account
+              </button>
+            )}
           </div>
           <button className="logout-lite" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
             <span className="mobile-only">🚪</span><span className="desktop-only">Sign Out</span>
@@ -388,6 +521,7 @@ return (
         )}
       </main>
 
+      {/* MODALS SECTION */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -396,12 +530,12 @@ return (
               <div className="class-selector">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <label style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Select Classes</label>
-                  <button className="select-all-btn" onClick={() => setSelectedClasses(selectedClasses.length === AVAILABLE_CLASSES.length ? [] : [...AVAILABLE_CLASSES])}>{selectedClasses.length === AVAILABLE_CLASSES.length ? "Deselect All" : "Select All"}</button>
+                  <button className="select-all-btn" onClick={selectAllClasses}>{selectedClasses.length === AVAILABLE_CLASSES.length ? "Deselect All" : "Select All"}</button>
                 </div>
                 <div className="class-checkbox-grid">
                   {AVAILABLE_CLASSES.map(cls => (
                     <label key={cls} className={`class-checkbox-item ${selectedClasses.includes(cls) ? "checked" : ""}`}>
-                      <input type="checkbox" checked={selectedClasses.includes(cls)} onChange={() => setSelectedClasses(prev => prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls])} style={{ display: 'none' }} />{cls}
+                      <input type="checkbox" checked={selectedClasses.includes(cls)} onChange={() => toggleClass(cls)} style={{ display: 'none' }} />{cls}
                     </label>
                   ))}
                 </div>
@@ -416,14 +550,9 @@ return (
               <option value="">-- Subject --</option>
               {(profile?.requested_subjects || "General").split(",").map((s) => <option key={s} value={s.trim()}>{s.trim()}</option>)}
             </select>
-            <input placeholder="Assignment Title" onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
-            <button className="main-btn" onClick={async () => {
-              const inserts = isAdmin ? selectedClasses.map(cls => ({ title: newHW.title, subject: newHW.subject, class_name: cls, due_date: selectedDate, teacher_id: session?.user?.id })) : [{ title: newHW.title, subject: newHW.subject, class_name: newHW.className, due_date: selectedDate, teacher_id: session?.user?.id }];
-              const { error } = await supabase.from("assignments").insert(inserts);
-              if (error) showError("Failed to post homework.");
-              else { setShowAddModal(false); fetchProfile(session?.user); }
-            }}>Post</button>
-            <button className="secondary-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
+            <input placeholder="Assignment Title" value={newHW.title} onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
+            <button className="main-btn" onClick={handlePostHomework}>Post</button>
+            <button className="secondary-btn" onClick={() => { setShowAddModal(false); setSelectedClasses([]); }}>Cancel</button>
           </div>
         </div>
       )}
@@ -436,9 +565,9 @@ return (
               <option value="">-- Class --</option>
               {(profile?.requested_classes || profile?.user_class || "").split(",").map((c) => <option key={c} value={c.trim()}>{c.trim()}</option>)}
             </select>
-            <input placeholder="Title" onChange={(e) => setNewMat({ ...newMat, title: e.target.value })} />
-            <input placeholder="Subject" onChange={(e) => setNewMat({ ...newMat, subject: e.target.value })} />
-            <input placeholder="Link (Drive/PDF)" onChange={(e) => setNewMat({ ...newMat, link: e.target.value })} />
+            <input placeholder="Title" value={newMat.title} onChange={(e) => setNewMat({ ...newMat, title: e.target.value })} />
+            <input placeholder="Subject" value={newMat.subject} onChange={(e) => setNewMat({ ...newMat, subject: e.target.value })} />
+            <input placeholder="Link (Drive/PDF)" value={newMat.link} onChange={(e) => setNewMat({ ...newMat, link: e.target.value })} />
             <button className="main-btn" onClick={async () => {
               const { error } = await supabase.from("materials").insert([{ title: newMat.title, subject: newMat.subject, link: newMat.link, class_name: newMat.className, teacher_id: session?.user?.id }]);
               if (error) showError("Failed to upload material.");
@@ -456,13 +585,13 @@ return (
             {isAdmin ? (
               <div className="class-selector">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <label>Select Classes</label>
-                  <button onClick={() => setAnnSelectedClasses(annSelectedClasses.length === AVAILABLE_CLASSES.length ? [] : [...AVAILABLE_CLASSES])}>{annSelectedClasses.length === AVAILABLE_CLASSES.length ? "Deselect All" : "Select All"}</button>
+                  <label style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Select Classes</label>
+                  <button className="select-all-btn" onClick={selectAllAnnClasses}>{annSelectedClasses.length === AVAILABLE_CLASSES.length ? "Deselect All" : "Select All"}</button>
                 </div>
                 <div className="class-checkbox-grid">
                   {AVAILABLE_CLASSES.map(cls => (
                     <label key={cls} className={`class-checkbox-item ${annSelectedClasses.includes(cls) ? "checked" : ""}`}>
-                      <input type="checkbox" checked={annSelectedClasses.includes(cls)} onChange={() => setAnnSelectedClasses(prev => prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls])} style={{ display: 'none' }} />{cls}
+                      <input type="checkbox" checked={annSelectedClasses.includes(cls)} onChange={() => toggleAnnClass(cls)} style={{ display: 'none' }} />{cls}
                     </label>
                   ))}
                 </div>
@@ -473,14 +602,11 @@ return (
                 {(profile?.requested_classes || profile?.user_class || "").split(",").map((c) => <option key={c} value={c.trim()}>{c.trim()}</option>)}
               </select>
             )}
-            <input placeholder="Title" onChange={(e) => setNewAnn({ ...newAnn, title: e.target.value })} />
-            <textarea placeholder="Write announcement..." rows={4} onChange={(e) => setNewAnn({ ...newAnn, content: e.target.value })} />
-            <button className="main-btn" onClick={async () => {
-              const inserts = isAdmin ? annSelectedClasses.map(cls => ({ title: newAnn.title, content: newAnn.content, class_name: cls, teacher_id: session?.user?.id })) : [{ title: newAnn.title, content: newAnn.content, class_name: newAnn.className, teacher_id: session?.user?.id }];
-              const { error } = await supabase.from("announcements").insert(inserts);
-              if (error) showError("Failed to post announcement.");
-              else { setShowAnnouncementModal(false); fetchAnnouncements(profile); }
-            }}>Post</button>
+            <input placeholder="Title" value={newAnn.title} onChange={(e) => setNewAnn({ ...newAnn, title: e.target.value })} />
+            <textarea placeholder="Write your announcement here..." rows={4}
+              style={{ width: '100%', padding: '14px', marginBottom: '16px', border: '2px solid #f1f5f9', borderRadius: '12px', background: '#f8fafc', fontSize: '1rem', color: 'var(--text-main)', resize: 'vertical' }}
+              value={newAnn.content} onChange={(e) => setNewAnn({ ...newAnn, content: e.target.value })} />
+            <button className="main-btn" onClick={handlePostAnnouncement}>Post</button>
             <button className="secondary-btn" onClick={() => setShowAnnouncementModal(false)}>Cancel</button>
           </div>
         </div>
@@ -509,6 +635,10 @@ return (
     </div>
   );
 }
+
+// ============================================================
+// MESSAGING VIEWS
+// ============================================================
 
 function MessagingView({ profile, session, isAdmin, showError }) {
   const [activeTab, setActiveTab] = useState("class");
@@ -596,55 +726,79 @@ function MessagingView({ profile, session, isAdmin, showError }) {
       .eq("is_class_chat", false)
       .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${session.user.id})`)
       .order("created_at");
-    if (error) showError("DM Fetch Failed.");
-    else setDirectMessages(data || []);
+
+    if (error) {
+      console.error("DM Error:", error.message);
+      showError("DM Fetch Failed: " + error.message);
+    } else {
+      setDirectMessages(data || []);
+    }
   };
 
   const sendClassMessage = async () => {
     if (!newMsg.trim()) return;
-    await supabase.from("messages").insert([{
+    const { error } = await supabase.from("messages").insert([{
       sender_id: session.user.id, 
       class_name: selectedClass,
       content: newMsg.trim(), 
       is_class_chat: true,
     }]);
+    if (error) showError("Send failed: " + error.message);
     setNewMsg("");
   };
 
   const sendDM = async () => {
     if (!newDM.trim() || !selectedStudent) return;
-    await supabase.from("messages").insert([{
+    const { error } = await supabase.from("messages").insert([{
       sender_id: session.user.id, 
       receiver_id: selectedStudent.id,
       content: newDM.trim(), 
       is_class_chat: false,
     }]);
+    if (error) showError("Send failed: " + error.message);
     setNewDM("");
   };
+
+  const filteredStudents = students.filter(s =>
+    (s.full_name || s.email).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const canClassChat = profile?.role === "teacher" || profile?.role === "student" || isAdmin;
+  const canDM = profile?.role === "teacher" || isAdmin;
 
   return (
     <div className="messaging-container">
       <div className="msg-tabs">
         <button className={activeTab === "class" ? "msg-tab active" : "msg-tab"} onClick={() => setActiveTab("class")}>🏫 Class Chat</button>
-        <button className={activeTab === "direct" ? "msg-tab active" : "msg-tab"} onClick={() => setActiveTab("direct")}>✉️ Direct Messages</button>
+        {(canDM || profile?.role === "student") && (
+          <button className={activeTab === "direct" ? "msg-tab active" : "msg-tab"} onClick={() => setActiveTab("direct")}>✉️ Direct Messages</button>
+        )}
       </div>
 
       {activeTab === "class" && (
         <div className="chat-layout">
+          {(profile?.role === "teacher" || isAdmin) && myClasses.length > 1 && (
+            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} style={{ marginBottom: '16px', padding: '10px', borderRadius: '10px', border: '2px solid #e2e8f0', width: '100%' }}>
+              {myClasses.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
           <div className="chat-messages">
+            {classMessages.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>}
             {classMessages.map(m => (
               <div key={m.id} className={`chat-bubble ${m.sender_id === session.user.id ? "mine" : "theirs"}`}>
-                <span className="bubble-name">{m.sender?.full_name || "Unknown"}</span>
+                <span className="bubble-name">{m.sender?.full_name || "Unknown"} {m.sender?.role === "teacher" ? "👩‍🏫" : m.sender?.role === "student" ? "🎓" : "🛡️"}</span>
                 <div className="bubble-text">{m.content}</div>
                 <span className="bubble-time">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             ))}
             <div ref={bottomRef} />
           </div>
-          <div className="chat-input-row">
-            <input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Type a message..." onKeyDown={e => e.key === "Enter" && sendClassMessage()} />
-            <button className="main-btn" onClick={sendClassMessage}>Send</button>
-          </div>
+          {canClassChat && (
+            <div className="chat-input-row">
+              <input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Type a message..." onKeyDown={e => e.key === "Enter" && sendClassMessage()} />
+              <button className="main-btn" style={{ width: 'auto', padding: '12px 20px' }} onClick={sendClassMessage}>Send</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -655,9 +809,15 @@ function MessagingView({ profile, session, isAdmin, showError }) {
           ) : (
             <div className="dm-split">
               <div className="dm-sidebar">
-                <input placeholder="Search students..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                <input
+                  placeholder="🔍 Search students..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '2px solid #e2e8f0', marginBottom: '12px', fontSize: '0.9rem' }}
+                />
                 <div className="student-list">
-                  {students.filter(s => (s.full_name || s.email).toLowerCase().includes(searchQuery.toLowerCase())).map(s => (
+                  {filteredStudents.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>No students found.</p>}
+                  {filteredStudents.map(s => (
                     <div key={s.id} className={`student-item ${selectedStudent?.id === s.id ? "selected" : ""}`} onClick={() => setSelectedStudent(s)}>
                       <strong>{s.full_name || s.email}</strong>
                       <small>{s.user_class}</small>
@@ -665,11 +825,20 @@ function MessagingView({ profile, session, isAdmin, showError }) {
                   ))}
                 </div>
               </div>
+
               <div className="dm-chat">
-                {selectedStudent ? (
+                {!selectedStudent ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                    ← Select a student to start chatting
+                  </div>
+                ) : (
                   <>
-                    <div className="dm-header"><strong>{selectedStudent.full_name}</strong></div>
+                    <div className="dm-header">
+                      <strong>{selectedStudent.full_name || selectedStudent.email}</strong>
+                      <small>{selectedStudent.user_class}</small>
+                    </div>
                     <div className="chat-messages">
+                      {directMessages.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px' }}>No messages yet.</p>}
                       {directMessages.map(m => (
                         <div key={m.id} className={`chat-bubble ${m.sender_id === session.user.id ? "mine" : "theirs"}`}>
                           <div className="bubble-text">{m.content}</div>
@@ -679,11 +848,11 @@ function MessagingView({ profile, session, isAdmin, showError }) {
                       <div ref={dmBottomRef} />
                     </div>
                     <div className="chat-input-row">
-                      <input value={newDM} onChange={e => setNewDM(e.target.value)} placeholder="Message student..." onKeyDown={e => e.key === "Enter" && sendDM()} />
-                      <button className="main-btn" onClick={sendDM}>Send</button>
+                      <input value={newDM} onChange={e => setNewDM(e.target.value)} placeholder={`Message ${selectedStudent.full_name || "student"}...`} onKeyDown={e => e.key === "Enter" && sendDM()} />
+                      <button className="main-btn" style={{ width: 'auto', padding: '12px 20px' }} onClick={sendDM}>Send</button>
                     </div>
                   </>
-                ) : <div style={{ textAlign: 'center', marginTop: '50px' }}>Select a student</div>}
+                )}
               </div>
             </div>
           )}
@@ -704,30 +873,65 @@ function StudentDMView({ profile, session, showError }) {
   useEffect(() => { if (selectedConvo) fetchMessages(selectedConvo.id); }, [selectedConvo]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  useEffect(() => {
+    const channel = supabase.channel("student-dm-global")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const msg = payload.new;
+        if (selectedConvo) {
+          const isRelevant =
+            (msg.sender_id === session.user.id && msg.receiver_id === selectedConvo.id) ||
+            (msg.sender_id === selectedConvo.id && msg.receiver_id === session.user.id);
+          if (isRelevant && !msg.is_class_chat) setMessages(prev => [...prev, msg]);
+        }
+        if (msg.receiver_id === session.user.id) {
+          fetchConversations();
+        }
+      }).subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [selectedConvo]);
+
   const fetchConversations = async () => {
-    const { data } = await supabase.from("messages").select("sender_id, receiver_id").eq("is_class_chat", false).or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`);
+    const { data } = await supabase
+      .from("messages")
+      .select("sender_id, receiver_id")
+      .eq("is_class_chat", false)
+      .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`);
+
     if (!data) return;
     const otherIds = [...new Set(data.map(m => m.sender_id === session.user.id ? m.receiver_id : m.sender_id))];
     if (otherIds.length === 0) return;
+
     const { data: profiles } = await supabase.from("profiles").select("*").in("id", otherIds);
     setConversations(profiles || []);
   };
 
   const fetchMessages = async (otherId) => {
-    const { data, error } = await supabase.from("messages").select("*").eq("is_class_chat", false).or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${session.user.id})`).order("created_at");
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("is_class_chat", false)
+      .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${session.user.id})`)
+      .order("created_at");
     if (error) showError("Failed to load messages.");
     else setMessages(data || []);
   };
 
   const sendMsg = async () => {
     if (!newMsg.trim() || !selectedConvo) return;
-    await supabase.from("messages").insert([{ sender_id: session.user.id, receiver_id: selectedConvo.id, content: newMsg.trim(), is_class_chat: false }]);
+    await supabase.from("messages").insert([{ 
+      sender_id: session.user.id, 
+      receiver_id: selectedConvo.id, 
+      content: newMsg.trim(), 
+      is_class_chat: false 
+    }]);
     setNewMsg("");
   };
 
   return (
     <div className="dm-split">
       <div className="dm-sidebar">
+        <p style={{ fontWeight: 700, marginBottom: '12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>YOUR TEACHERS</p>
+        {conversations.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No conversations yet.</p>}
         {conversations.map(c => (
           <div key={c.id} className={`student-item ${selectedConvo?.id === c.id ? "selected" : ""}`} onClick={() => setSelectedConvo(c)}>
             <strong>{c.full_name || c.email}</strong>
@@ -736,19 +940,24 @@ function StudentDMView({ profile, session, showError }) {
         ))}
       </div>
       <div className="dm-chat">
-        {selectedConvo && (
+        {!selectedConvo ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>← Select a conversation</div>
+        ) : (
           <>
+            <div className="dm-header"><strong>{selectedConvo.full_name || selectedConvo.email}</strong><small>{selectedConvo.role}</small></div>
             <div className="chat-messages">
+              {messages.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px' }}>No messages yet.</p>}
               {messages.map(m => (
                 <div key={m.id} className={`chat-bubble ${m.sender_id === session.user.id ? "mine" : "theirs"}`}>
                   <div className="bubble-text">{m.content}</div>
+                  <span className="bubble-time">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               ))}
               <div ref={bottomRef} />
             </div>
             <div className="chat-input-row">
-              <input value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} />
-              <button className="main-btn" onClick={sendMsg}>Send</button>
+              <input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Reply..." onKeyDown={e => e.key === "Enter" && sendMsg()} />
+              <button className="main-btn" style={{ width: 'auto', padding: '12px 20px' }} onClick={sendMsg}>Send</button>
             </div>
           </>
         )}
@@ -757,11 +966,16 @@ function StudentDMView({ profile, session, showError }) {
   );
 }
 
+// ============================================================
+// AUXILIARY COMPONENTS & TOASTS
+// ============================================================
+
 function ErrorToast({ message, onClose }) {
+  if (!message) return null;
   return (
     <div className="error-toast">
       <span>⚠️ {message}</span>
-      <button onClick={onClose}>✕</button>
+      <button onClick={onClose} className="error-toast-close">✕</button>
     </div>
   );
 }
@@ -769,10 +983,12 @@ function ErrorToast({ message, onClose }) {
 function AdminPanel({ fetchProfile }) {
   const [users, setUsers] = useState([]);
   useEffect(() => { fetchUsers(); }, []);
+  
   const fetchUsers = async () => {
     const { data } = await supabase.from("profiles").select("*").order("is_approved", { ascending: true });
     setUsers(data || []);
   };
+  
   return (
     <div className="admin-panel">
       <h2>User Management</h2>
@@ -781,13 +997,14 @@ function AdminPanel({ fetchProfile }) {
           <div key={u.id} className="task-item">
             <div className="task-info">
               <strong>{u.full_name || u.email}</strong>
-              <p>{u.role} | {u.user_class || "No Class"}</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{u.email}</p>
+              <p>{u.role} | {u.user_class || "No Class Assigned"}</p>
               <span className={`status-badge ${u.is_approved ? 'status-approved' : 'status-pending'}`}>{u.is_approved ? "Approved ✅" : "Pending ⏳"}</span>
             </div>
             <button className="main-btn" onClick={async () => {
               await supabase.from("profiles").update({ is_approved: !u.is_approved }).eq("id", u.id);
               fetchUsers(); fetchProfile();
-            }}>{u.is_approved ? "Revoke" : "Approve"}</button>
+            }}>{u.is_approved ? "Revoke Access" : "Approve User"}</button>
           </div>
         ))}
       </div>
@@ -800,6 +1017,7 @@ function GradesView({ profile, isAdmin }) {
   const [showModal, setShowModal] = useState(false);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  
   const [selectedStudent, setSelectedStudent] = useState("");
   const [subject, setSubject] = useState("");
   const [gradeValue, setGradeValue] = useState("");
@@ -807,14 +1025,18 @@ function GradesView({ profile, isAdmin }) {
 
   useEffect(() => {
     fetchGrades();
-    if (profile?.role === 'teacher' || isAdmin) fetchStudents();
+    if (profile?.role === 'teacher' || isAdmin) {
+      fetchStudents();
+    }
   }, [profile]);
 
   const fetchGrades = async () => {
     let query = supabase.from("grades").select("*, teacher:profiles!teacher_id(full_name)");
-    if (profile?.role === 'student') query = query.eq("student_id", profile.id);
-    const { data } = await query.order("created_at", { ascending: false });
-    setGrades(data || []);
+    if (profile?.role === 'student') {
+      query = query.eq("student_id", profile.id);
+    }
+    const { data, error } = await query.order("created_at", { ascending: false });
+    if (!error) setGrades(data || []);
     setLoading(false);
   };
 
@@ -825,46 +1047,77 @@ function GradesView({ profile, isAdmin }) {
 
   const submitGrade = async (e) => {
     e.preventDefault();
+    if (!selectedStudent || !subject || !gradeValue) return alert("Fill in required fields!");
+
     const student = students.find(s => s.id === selectedStudent);
     const { error } = await supabase.from("grades").insert([{
-      student_id: selectedStudent, teacher_id: profile.id, subject, grade_value: gradeValue, comment, class_name: student?.user_class || "General"
+      student_id: selectedStudent,
+      teacher_id: profile.id,
+      subject,
+      grade_value: gradeValue,
+      comment,
+      class_name: student?.user_class || "General"
     }]);
-    if (!error) { setShowModal(false); setSubject(""); setGradeValue(""); fetchGrades(); }
+
+    if (!error) {
+      setShowModal(false);
+      setSubject(""); setGradeValue(""); setComment("");
+      fetchGrades();
+    } else {
+      alert(error.message);
+    }
   };
 
-  if (loading) return <div className="p-4">Loading...</div>;
+  if (loading) return <div className="p-4">Loading grades...</div>;
 
   return (
     <div className="materials-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2>📊 Academic Records</h2>
-        {(profile?.role === "teacher" || isAdmin) && <button className="main-btn" onClick={() => setShowModal(true)}>+ Assign Grade</button>}
+        {(profile?.role === "teacher" || isAdmin) && (
+          <button className="main-btn" style={{ width: 'auto', padding: '10px 20px' }} onClick={() => setShowModal(true)}>+ Assign Grade</button>
+        )}
       </div>
+
       <div className="task-grid">
-        {grades.map(g => (
+        {grades.length === 0 ? <p>No grades recorded yet.</p> : grades.map(g => (
           <div key={g.id} className="task-item">
             <div className="task-info">
-              <strong>{g.subject}</strong>
-              <p>{g.comment || "No comment."}</p>
-              <span className="status-badge status-approved">{g.grade_value}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <strong style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>{g.subject}</strong>
+                  <p style={{ margin: '5px 0', fontSize: '0.9rem' }}>{g.comment || "No teacher comments."}</p>
+                </div>
+                <span className="status-badge status-approved" style={{ fontSize: '1.2rem', padding: '10px' }}>
+                  {g.grade_value}
+                </span>
+              </div>
+              <div style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '5px' }}>
+                <small style={{ color: 'var(--text-muted)' }}>
+                  {profile?.role === 'teacher' ? `Student ID: ${g.student_id.slice(0,8)}...` : `Teacher: ${g.teacher?.full_name || 'Faculty'}`}
+                </small>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Assign New Grade</h3>
-            <form onSubmit={submitGrade}>
-              <select onChange={(e) => setSelectedStudent(e.target.value)} required>
+            <form onSubmit={submitGrade} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <select className="main-input" value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} required>
                 <option value="">Select Student</option>
-                {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                {students.map(s => <option key={s.id} value={s.id}>{s.full_name} ({s.user_class})</option>)}
               </select>
-              <input placeholder="Subject" onChange={(e) => setSubject(e.target.value)} required />
-              <input placeholder="Grade" onChange={(e) => setGradeValue(e.target.value)} required />
-              <textarea placeholder="Comment" onChange={(e) => setComment(e.target.value)} />
-              <button type="submit" className="main-btn">Save</button>
-              <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
+              <input className="main-input" placeholder="Subject (e.g. Math)" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+              <input className="main-input" placeholder="Grade (e.g. A, 19, 95%)" value={gradeValue} onChange={(e) => setGradeValue(e.target.value)} required />
+              <textarea className="main-input" placeholder="Comments (Optional)" value={comment} onChange={(e) => setComment(e.target.value)} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="main-btn">Save Grade</button>
+                <button type="button" className="main-btn" style={{ background: '#ccc' }} onClick={() => setShowModal(false)}>Cancel</button>
+              </div>
             </form>
           </div>
         </div>
