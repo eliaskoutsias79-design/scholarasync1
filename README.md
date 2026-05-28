@@ -1,2 +1,2 @@
-# scholarasync1
-Created with CodeSandbox
+# scholarasync
+A tool for campus students to check their homework.
