@@ -4,7 +4,6 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
 import "./styles.css";
-import "./glowup.css";
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com";
 
@@ -77,6 +76,49 @@ export default function App() {
   const filteredAvailableClasses = AVAILABLE_CLASSES.filter(cls =>
     cls.toLowerCase().includes(classSearch.trim().toLowerCase())
   );
+
+  const pageMeta = {
+    calendar: {
+      eyebrow: "Workspace",
+      title: "Calendar",
+      description: profile?.role === "student"
+        ? `Assignments and deadlines for ${profile?.user_class || "your class"}.`
+        : "Plan assignments and keep every class on schedule.",
+      icon: "📅",
+    },
+    materials: {
+      eyebrow: "Resources",
+      title: "Study Materials",
+      description: "Keep notes, links and learning resources organized by class.",
+      icon: "📚",
+    },
+    announcements: {
+      eyebrow: "Updates",
+      title: "Announcements",
+      description: "Share important classroom news without losing it in chat.",
+      icon: "📣",
+    },
+    messages: {
+      eyebrow: "Communication",
+      title: "Messages",
+      description: "Class conversations and direct communication in one place.",
+      icon: "💬",
+    },
+    grades: {
+      eyebrow: "Progress",
+      title: "Academic Records",
+      description: "Review results, feedback and student progress.",
+      icon: "📊",
+    },
+    admin: {
+      eyebrow: "Administration",
+      title: "User Management",
+      description: "Review registration requests and control access.",
+      icon: "🛡️",
+    },
+  };
+
+  const activePage = pageMeta[view] || pageMeta.calendar;
 
   const showError = (msg) => {
     setErrorMsg(msg);
@@ -680,7 +722,11 @@ export default function App() {
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <div className="text-logo-sidebar">Scholar<span>Async</span></div>
+          <div className="brand-mark">S</div>
+          <div className="brand-copy">
+            <div className="text-logo-sidebar">Scholar<span>Async</span></div>
+            <small>Classroom workspace</small>
+          </div>
         </div>
         <nav>
           <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}><span className="icon-span">📅</span><span className="desktop-only">Calendar</span></button>
@@ -691,19 +737,58 @@ export default function App() {
           {isAdmin && <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}><span className="icon-span">🛡️</span><span className="desktop-only">Admin</span></button>}
         </nav>
         <div className="user-tag">
-          <div className="desktop-only" style={{ width: '100%', marginBottom: '10px' }}>
-            <small>{profile?.role?.toUpperCase()}</small>
-            <p style={{ margin: '2px 0 8px 0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-              {profile?.full_name || "Faculty"}
-            </p>
+          <div className="sidebar-profile desktop-only">
+            {googleAvatar ? (
+              <img src={googleAvatar} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="sidebar-avatar-fallback">
+                {(profile?.full_name || "S").charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="sidebar-profile-copy">
+              <strong>{profile?.full_name || "Faculty"}</strong>
+              <span>{profile?.role || "member"}{profile?.user_class ? ` · ${profile.user_class}` : ""}</span>
+            </div>
           </div>
           <button className="logout-lite" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
-            <span className="mobile-only">🚪</span><span className="desktop-only">Sign Out</span>
+            <span>↗</span><span className="desktop-only">Sign out</span>
           </button>
         </div>
       </aside>
 
       <main className="main-content">
+        <header className="dashboard-topbar">
+          <div className="page-heading">
+            <span className="page-eyebrow">{activePage.eyebrow}</span>
+            <div className="page-title-row">
+              <span className="page-title-icon">{activePage.icon}</span>
+              <div>
+                <h1>{activePage.title}</h1>
+                <p>{activePage.description}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="topbar-actions">
+            <div className="today-pill">
+              <span>Today</span>
+              <strong>{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}</strong>
+            </div>
+            <div className="topbar-profile">
+              {googleAvatar ? (
+                <img src={googleAvatar} alt="" referrerPolicy="no-referrer" />
+              ) : (
+                <span>{(profile?.full_name || "S").charAt(0).toUpperCase()}</span>
+              )}
+              <div>
+                <strong>{firstName}</strong>
+                <small>{isAdmin ? "Administrator" : profile?.role}</small>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section className="page-surface">
         {view === "admin" ? (
           <AdminPanel fetchProfile={() => fetchProfile(session?.user)} />
         ) : view === "materials" ? (
@@ -785,6 +870,7 @@ export default function App() {
             />
           </div>
         )}
+        </section>
       </main>
 
       {/* MODALS SECTION */}
