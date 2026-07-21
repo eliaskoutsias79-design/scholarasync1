@@ -44,6 +44,7 @@ function GoogleIcon() {
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const isMobile = useIsMobile();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
