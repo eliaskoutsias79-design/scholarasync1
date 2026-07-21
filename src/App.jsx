@@ -1602,7 +1602,23 @@ function ProfileView({
               >
                 {uploadingAvatar ? "Uploading..." : "Upload image"}
               </button>
-
+<button
+  type="button"
+  className="secondary-btn"
+  style={{
+    width: "100%",
+    marginTop: "12px",
+    background: "#ef4444",
+    color: "#fff",
+    border: "none"
+  }}
+  onClick={async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  }}
+>
+  🚪 Sign Out
+</button>
               {profileDraft.avatarUrl && (
                 <button
                   type="button"
