@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const navItems = [
   { id: "home", label: "Home", icon: "⌂" },
@@ -43,6 +43,12 @@ export default function MobileDashboard({
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDay, setSelectedDay] = useState(new Date().getDate());
   const [search, setSearch] = useState("");
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowSplash(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const mode = authMode === "signup" ? "signup" : "login";
   const displayName =
@@ -73,6 +79,38 @@ export default function MobileDashboard({
       `${item.subject} ${item.title} ${item.type}`.toLowerCase().includes(query)
     );
   }, [search]);
+
+  if (showSplash) {
+    return (
+      <>
+        <style>{styles}</style>
+        <main className="splash-shell" aria-label="ScholarAsync loading">
+          <div className="splash-grid" />
+          <div className="splash-glow splash-glow-one" />
+          <div className="splash-glow splash-glow-two" />
+          <div className="splash-particles" aria-hidden="true">
+            <i /><i /><i /><i /><i /><i />
+          </div>
+
+          <section className="splash-content">
+            <div className="splash-logo-wrap">
+              <div className="splash-ring splash-ring-one" />
+              <div className="splash-ring splash-ring-two" />
+              <div className="splash-logo">SA</div>
+            </div>
+
+            <p className="splash-kicker">YOUR CLASSROOM, REIMAGINED</p>
+            <h1>ScholarAsync</h1>
+            <p className="splash-copy">Organize. Learn. Achieve.</p>
+
+            <div className="splash-loader" aria-hidden="true">
+              <span />
+            </div>
+          </section>
+        </main>
+      </>
+    );
+  }
 
   async function submitAuth(event) {
     event.preventDefault();
@@ -562,6 +600,183 @@ function capitalize(value) {
 }
 
 const styles = `
+
+  .splash-shell {
+    position: relative;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: 24px;
+    color: #fff;
+    background:
+      radial-gradient(circle at 50% 34%, rgba(130, 86, 255, .20), transparent 28%),
+      linear-gradient(155deg, #05070e 0%, #0a0e1a 52%, #070912 100%);
+  }
+  .splash-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .16;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(circle at center, black 0%, transparent 72%);
+    animation: splash-grid-drift 9s linear infinite;
+  }
+  .splash-glow {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(72px);
+    opacity: .52;
+    animation: splash-float 5s ease-in-out infinite;
+  }
+  .splash-glow-one {
+    width: 290px;
+    height: 290px;
+    top: -95px;
+    left: -105px;
+    background: #6e43ff;
+  }
+  .splash-glow-two {
+    width: 260px;
+    height: 260px;
+    right: -95px;
+    bottom: -80px;
+    background: #2f6dff;
+    animation-delay: -2.2s;
+  }
+  .splash-content {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    animation: splash-content-in .75s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .splash-logo-wrap {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 24px;
+  }
+  .splash-logo {
+    position: relative;
+    z-index: 3;
+    width: 82px;
+    height: 82px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.24);
+    border-radius: 26px;
+    color: #fff;
+    background: linear-gradient(145deg, #8c5cff, #4f57df);
+    box-shadow:
+      0 22px 52px rgba(85, 70, 225, .38),
+      inset 0 1px 0 rgba(255,255,255,.34);
+    font-size: 24px;
+    font-weight: 950;
+    letter-spacing: -.06em;
+    animation: splash-logo-pulse 1.7s ease-in-out infinite;
+  }
+  .splash-ring {
+    position: absolute;
+    border: 1px solid rgba(167, 139, 250, .30);
+    border-radius: 999px;
+  }
+  .splash-ring-one {
+    width: 108px;
+    height: 108px;
+    animation: splash-ring 1.8s ease-out infinite;
+  }
+  .splash-ring-two {
+    width: 132px;
+    height: 132px;
+    animation: splash-ring 1.8s .55s ease-out infinite;
+  }
+  .splash-kicker {
+    margin: 0 0 10px;
+    color: #9888ff;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .20em;
+  }
+  .splash-content h1 {
+    margin: 0;
+    font-size: clamp(36px, 11vw, 54px);
+    line-height: 1;
+    letter-spacing: -.065em;
+    text-shadow: 0 10px 35px rgba(92, 72, 224, .28);
+  }
+  .splash-copy {
+    margin: 14px 0 0;
+    color: #8792a8;
+    font-size: 14px;
+    letter-spacing: .02em;
+  }
+  .splash-loader {
+    width: 118px;
+    height: 4px;
+    overflow: hidden;
+    margin-top: 34px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+  }
+  .splash-loader span {
+    display: block;
+    width: 42%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8d5fff, #6da2ff);
+    box-shadow: 0 0 18px rgba(123, 101, 255, .7);
+    animation: splash-loader 1.2s ease-in-out infinite;
+  }
+  .splash-particles i {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(181, 165, 255, .55);
+    box-shadow: 0 0 12px rgba(145, 120, 255, .8);
+    animation: splash-particle 4s ease-in-out infinite;
+  }
+  .splash-particles i:nth-child(1) { left: 15%; top: 23%; animation-delay: -.3s; }
+  .splash-particles i:nth-child(2) { right: 16%; top: 31%; animation-delay: -1.2s; }
+  .splash-particles i:nth-child(3) { left: 24%; bottom: 21%; animation-delay: -2s; }
+  .splash-particles i:nth-child(4) { right: 24%; bottom: 18%; animation-delay: -2.7s; }
+  .splash-particles i:nth-child(5) { left: 44%; top: 13%; animation-delay: -3.1s; }
+  .splash-particles i:nth-child(6) { right: 37%; bottom: 11%; animation-delay: -3.5s; }
+  @keyframes splash-content-in {
+    from { opacity: 0; transform: translateY(14px) scale(.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes splash-ring {
+    0% { opacity: .7; transform: scale(.72); }
+    100% { opacity: 0; transform: scale(1.18); }
+  }
+  @keyframes splash-logo-pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.045); }
+  }
+  @keyframes splash-loader {
+    0% { transform: translateX(-115%); }
+    50% { transform: translateX(95%); }
+    100% { transform: translateX(250%); }
+  }
+  @keyframes splash-float {
+    0%,100% { transform: translate3d(0,0,0) scale(1); }
+    50% { transform: translate3d(14px,-18px,0) scale(1.08); }
+  }
+  @keyframes splash-grid-drift {
+    from { transform: translate3d(0,0,0); }
+    to { transform: translate3d(34px,34px,0); }
+  }
+  @keyframes splash-particle {
+    0%,100% { opacity: .18; transform: translateY(0) scale(.8); }
+    50% { opacity: .85; transform: translateY(-16px) scale(1.25); }
+  }
   :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color-scheme: dark; }
   * { box-sizing: border-box; }
   html, body, #root { min-height: 100%; margin: 0; }
