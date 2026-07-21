@@ -32,7 +32,6 @@ const formatClassName = (input) => {
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [identities, setIdentities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
   const [events, setEvents] = useState([]);
@@ -77,9 +76,6 @@ export default function App() {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       if (session?.user) {
-        // Extract and list active linked account identity providers
-        const linkedProviders = session.user.identities?.map(id => id.provider) || [];
-        setIdentities(linkedProviders);
         await fetchProfile(session.user);
       } else {
         setLoading(false);
@@ -87,15 +83,14 @@ export default function App() {
     };
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
       setSession(currentSession);
+
       if (currentSession?.user) {
-        const linkedProviders = currentSession.user.identities?.map(id => id.provider) || [];
-        setIdentities(linkedProviders);
-        await fetchProfile(currentSession.user);
+        setLoading(true);
+        setTimeout(() => fetchProfile(currentSession.user), 0);
       } else {
         setProfile(null);
-        setIdentities([]);
         setEvents([]);
         setMaterials([]);
         setAnnouncements([]);
@@ -105,74 +100,88 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, [isReady]);
 
- const fetchProfile = async (user) => {
-  if (!user) return;
+  const fetchProfile = async (user) => {
+    if (!user) return;
 
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    const provider =
-      user.app_metadata?.provider ||
-      user.identities?.[0]?.provider ||
-      "";
+      if (error) {
+        throw error;
+      }
 
-    const isGoogleUser = provider === "google";
-
-    const setupIsIncomplete =
-      !data?.role ||
-      data.role === "SETUP_REQUIRED" ||
-      (
-        data.role === "student" &&
-        (!data.user_class || data.user_class === "Not Assigned")
-      ) ||
-      (
-        data.role === "teacher" &&
-        (!data.requested_classes || !data.requested_subjects)
-      );
-
-    let currentProfile;
-
-    if (!error && data && !(isGoogleUser && setupIsIncomplete)) {
-      currentProfile = data;
-    } else {
       const meta = user.user_metadata || {};
+      const fallbackName =
+        meta.full_name ||
+        meta.fullName ||
+        meta.name ||
+        user.email?.split("@")[0] ||
+        "New User";
 
-      currentProfile = {
-        id: user.id,
-        email: user.email,
-        full_name:
-          meta.full_name ||
-          meta.fullName ||
-          meta.name ||
-          user.email?.split("@")[0] ||
-          "New User",
-        role: "SETUP_REQUIRED",
-        user_class: null,
-        requested_classes: "",
-        requested_subjects: "",
-        is_approved: user.email === ADMIN_EMAIL,
-      };
+      let currentProfile;
+
+      if (!data) {
+        currentProfile = {
+          id: user.id,
+          email: user.email,
+          full_name: fallbackName,
+          role: "SETUP_REQUIRED",
+          user_class: null,
+          requested_classes: "",
+          requested_subjects: "",
+          is_approved: user.email === ADMIN_EMAIL,
+        };
+      } else {
+        const studentSetupMissing =
+          data.role === "student" &&
+          (!data.user_class || data.user_class === "Not Assigned");
+
+        const teacherSetupMissing =
+          data.role === "teacher" &&
+          (!data.requested_classes || !data.requested_subjects);
+
+        const setupIsIncomplete =
+          !data.role ||
+          data.role === "SETUP_REQUIRED" ||
+          studentSetupMissing ||
+          teacherSetupMissing;
+
+        currentProfile = setupIsIncomplete
+          ? {
+              ...data,
+              full_name: data.full_name || fallbackName,
+              role: "SETUP_REQUIRED",
+              user_class: data.user_class || null,
+              requested_classes: data.requested_classes || "",
+              requested_subjects: data.requested_subjects || "",
+            }
+          : data;
+      }
+
+      setProfile(currentProfile);
+
+      if (currentProfile.role !== "SETUP_REQUIRED") {
+        await Promise.all([
+          fetchEvents(currentProfile, user.id, user.email),
+          fetchMaterials(currentProfile),
+          fetchAnnouncements(currentProfile),
+        ]);
+      } else {
+        setEvents([]);
+        setMaterials([]);
+        setAnnouncements([]);
+      }
+    } catch (err) {
+      console.error("Profile loading issue:", err);
+      showError("Could not load your profile. Please refresh and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setProfile(currentProfile);
-
-    if (currentProfile.role !== "SETUP_REQUIRED") {
-      await Promise.all([
-        fetchEvents(currentProfile, user.id, user.email),
-        fetchMaterials(currentProfile),
-        fetchAnnouncements(currentProfile),
-      ]);
-    }
-  } catch (err) {
-    console.error("Profile parsing issue:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const fetchEvents = async (prof, userId, userEmail) => {
     if (!prof || prof.role === "SETUP_REQUIRED") return;
@@ -234,7 +243,10 @@ export default function App() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: window.location.origin,
+        queryParams: {
+          prompt: "select_account",
+        },
       }
     });
     if (error) showError("Google authentication failed: " + error.message);
@@ -242,41 +254,57 @@ export default function App() {
 
   const handlePostGoogleOnboarding = async () => {
     if (!profile || !session?.user) return;
-    setLoading(true);
 
     const { role, userClass, teacherClasses, teacherSubjects } = authData;
-    const processedClasses = teacherClasses ? teacherClasses.split(",").map(c => formatClassName(c)).join(", ") : "";
-    
-    const isSchoolLinked = identities.includes('keycloak');
+    const processedClasses = teacherClasses
+      ? teacherClasses
+          .split(",")
+          .map(c => formatClassName(c))
+          .filter(Boolean)
+          .join(", ")
+      : "";
+    const processedSubjects = teacherSubjects
+      ? teacherSubjects
+          .split(",")
+          .map(subject => subject.trim())
+          .filter(Boolean)
+          .join(", ")
+      : "";
+
+    if (role === "student" && !userClass) {
+      showError("Please select your class.");
+      return;
+    }
+
+    if (role === "teacher" && (!processedClasses || !processedSubjects)) {
+      showError("Please enter at least one class and one subject.");
+      return;
+    }
+
+    setLoading(true);
 
     const finalizedProfile = {
       id: session.user.id,
       email: session.user.email,
       full_name: profile.full_name,
-      role: role,
+      role,
       user_class: role === "student" ? userClass : null,
       requested_classes: role === "teacher" ? processedClasses : null,
-      requested_subjects: role === "teacher" ? teacherSubjects : null,
-      is_approved: session.user.email === ADMIN_EMAIL || isSchoolLinked
+      requested_subjects: role === "teacher" ? processedSubjects : null,
+      is_approved: session.user.email === ADMIN_EMAIL,
     };
 
-    const { error } = await supabase.from("profiles").upsert(finalizedProfile);
-    if (error) {
-      alert("Registration failed to submit: " + error.message);
-      setLoading(false);
-    } else {
-      await fetchProfile(session.user);
-    }
-  };
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(finalizedProfile, { onConflict: "id" });
 
-  const linkSchoolAccount = async () => {
-    const { error } = await supabase.auth.linkIdentity({
-      provider: 'keycloak', // OIDC protocol used by sso.sch.gr setup
-      options: {
-        redirectTo: window.location.origin
-      }
-    });
-    if (error) showError("SSO link authorization failed: " + error.message);
+    if (error) {
+      showError("Registration failed: " + error.message);
+      setLoading(false);
+      return;
+    }
+
+    await fetchProfile(session.user);
   };
 
   const toggleClass = (cls) => setSelectedClasses(prev => prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls]);
@@ -387,7 +415,7 @@ export default function App() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px', width: '100%' }}>
             <label style={{ fontSize: '0.9rem', color: '#ccc', textAlign: 'left' }}>
-              Signing in as: <strong style={{ color: '#fff' }}>{profile.full_name}</strong>
+              Registering as: <strong style={{ color: '#fff' }}>{profile.full_name}</strong>
             </label>
             
             <select className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} value={authData.role} onChange={e => setAuthData({ ...authData, role: e.target.value })}>
@@ -450,13 +478,6 @@ export default function App() {
             <p style={{ margin: '2px 0 8px 0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
               {profile?.full_name || "Faculty"}
             </p>
-            
-            {/* Renders linking target button conditionally until identity verification match occurs */}
-            {!identities.includes('keycloak') && (
-              <button onClick={linkSchoolAccount} style={{ background: '#3b82f6', color: '#fff', fontSize: '0.7rem', padding: '4px 8px', border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%' }}>
-                🔗 Link School Account
-              </button>
-            )}
           </div>
           <button className="logout-lite" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
             <span className="mobile-only">🚪</span><span className="desktop-only">Sign Out</span>
@@ -568,14 +589,14 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <select onChange={(e) => setNewHW({ ...newHW, className: e.target.value })}>
+              <select value={newHW.className} onChange={(e) => setNewHW({ ...newHW, className: e.target.value })}>
                 <option value="">-- Class --</option>
-                {(profile?.requested_classes || profile?.user_class || "").split(",").map((c) => <option key={c} value={c.trim()}>{c.trim()}</option>)}
+                {(profile?.requested_classes || profile?.user_class || "").split(",").map(c => c.trim()).filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             )}
-            <select onChange={(e) => setNewHW({ ...newHW, subject: e.target.value })}>
+            <select value={newHW.subject} onChange={(e) => setNewHW({ ...newHW, subject: e.target.value })}>
               <option value="">-- Subject --</option>
-              {(profile?.requested_subjects || "General").split(",").map((s) => <option key={s} value={s.trim()}>{s.trim()}</option>)}
+              {(profile?.requested_subjects || "General").split(",").map(s => s.trim()).filter(Boolean).map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <input placeholder="Assignment Title" value={newHW.title} onChange={(e) => setNewHW({ ...newHW, title: e.target.value })} />
             <button className="main-btn" onClick={handlePostHomework}>Post</button>
@@ -588,17 +609,34 @@ export default function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Upload Material</h3>
-            <select onChange={(e) => setNewMat({ ...newMat, className: e.target.value })}>
+            <select value={newMat.className} onChange={(e) => setNewMat({ ...newMat, className: e.target.value })}>
               <option value="">-- Class --</option>
-              {(profile?.requested_classes || profile?.user_class || "").split(",").map((c) => <option key={c} value={c.trim()}>{c.trim()}</option>)}
+              {(profile?.requested_classes || profile?.user_class || "").split(",").map(c => c.trim()).filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <input placeholder="Title" value={newMat.title} onChange={(e) => setNewMat({ ...newMat, title: e.target.value })} />
             <input placeholder="Subject" value={newMat.subject} onChange={(e) => setNewMat({ ...newMat, subject: e.target.value })} />
             <input placeholder="Link (Drive/PDF)" value={newMat.link} onChange={(e) => setNewMat({ ...newMat, link: e.target.value })} />
             <button className="main-btn" onClick={async () => {
-              const { error } = await supabase.from("materials").insert([{ title: newMat.title, subject: newMat.subject, link: newMat.link, class_name: newMat.className, teacher_id: session?.user?.id }]);
-              if (error) showError("Failed to upload material.");
-              else { setShowMaterialModal(false); fetchMaterials(profile); }
+              if (!newMat.title.trim() || !newMat.subject.trim() || !newMat.link.trim() || !newMat.className) {
+                showError("Fill in all material fields.");
+                return;
+              }
+
+              const { error } = await supabase.from("materials").insert([{
+                title: newMat.title.trim(),
+                subject: newMat.subject.trim(),
+                link: newMat.link.trim(),
+                class_name: newMat.className,
+                teacher_id: session?.user?.id,
+              }]);
+
+              if (error) {
+                showError("Failed to upload material: " + error.message);
+              } else {
+                setShowMaterialModal(false);
+                setNewMat({ title: "", link: "", subject: "", className: "" });
+                fetchMaterials(profile);
+              }
             }}>Upload</button>
             <button className="secondary-btn" onClick={() => setShowMaterialModal(false)}>Cancel</button>
           </div>
@@ -624,9 +662,9 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <select onChange={(e) => setNewAnn({ ...newAnn, className: e.target.value })}>
+              <select value={newAnn.className} onChange={(e) => setNewAnn({ ...newAnn, className: e.target.value })}>
                 <option value="">-- Class --</option>
-                {(profile?.requested_classes || profile?.user_class || "").split(",").map((c) => <option key={c} value={c.trim()}>{c.trim()}</option>)}
+                {(profile?.requested_classes || profile?.user_class || "").split(",").map(c => c.trim()).filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             )}
             <input placeholder="Title" value={newAnn.title} onChange={(e) => setNewAnn({ ...newAnn, title: e.target.value })} />
@@ -702,7 +740,7 @@ function MessagingView({ profile, session, isAdmin, showError }) {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           if (payload.new.class_name === selectedClass && payload.new.is_class_chat) {
-            setClassMessages(prev => [...prev, payload.new]);
+            fetchClassMessages(selectedClass);
           }
         }
       ).subscribe();
@@ -712,7 +750,7 @@ function MessagingView({ profile, session, isAdmin, showError }) {
   useEffect(() => {
     if (!selectedStudent) return;
     const channel = supabase
-      .channel("dm-logic")
+      .channel(`dm-${session.user.id}-${selectedStudent.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           const msg = payload.new;
@@ -725,7 +763,7 @@ function MessagingView({ profile, session, isAdmin, showError }) {
         }
       ).subscribe();
     return () => supabase.removeChannel(channel);
-  }, [selectedStudent]);
+  }, [selectedStudent, session?.user?.id]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [classMessages]);
   useEffect(() => { dmBottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [directMessages]);
@@ -770,7 +808,10 @@ function MessagingView({ profile, session, isAdmin, showError }) {
       content: newMsg.trim(), 
       is_class_chat: true,
     }]);
-    if (error) showError("Send failed: " + error.message);
+    if (error) {
+      showError("Send failed: " + error.message);
+      return;
+    }
     setNewMsg("");
   };
 
@@ -782,7 +823,10 @@ function MessagingView({ profile, session, isAdmin, showError }) {
       content: newDM.trim(), 
       is_class_chat: false,
     }]);
-    if (error) showError("Send failed: " + error.message);
+    if (error) {
+      showError("Send failed: " + error.message);
+      return;
+    }
     setNewDM("");
   };
 
@@ -924,11 +968,31 @@ function StudentDMView({ profile, session, showError }) {
       .eq("is_class_chat", false)
       .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`);
 
-    if (!data) return;
-    const otherIds = [...new Set(data.map(m => m.sender_id === session.user.id ? m.receiver_id : m.sender_id))];
-    if (otherIds.length === 0) return;
+    if (!data) {
+      setConversations([]);
+      return;
+    }
 
-    const { data: profiles } = await supabase.from("profiles").select("*").in("id", otherIds);
+    const otherIds = [...new Set(
+      data.map(m => m.sender_id === session.user.id ? m.receiver_id : m.sender_id)
+    )].filter(Boolean);
+
+    if (otherIds.length === 0) {
+      setConversations([]);
+      return;
+    }
+
+    const { data: profiles, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", otherIds)
+      .neq("role", "student");
+
+    if (error) {
+      showError("Failed to load conversations.");
+      return;
+    }
+
     setConversations(profiles || []);
   };
 
@@ -945,12 +1009,18 @@ function StudentDMView({ profile, session, showError }) {
 
   const sendMsg = async () => {
     if (!newMsg.trim() || !selectedConvo) return;
-    await supabase.from("messages").insert([{ 
+    const { error } = await supabase.from("messages").insert([{ 
       sender_id: session.user.id, 
       receiver_id: selectedConvo.id, 
       content: newMsg.trim(), 
       is_class_chat: false 
     }]);
+
+    if (error) {
+      showError("Send failed: " + error.message);
+      return;
+    }
+
     setNewMsg("");
   };
 
@@ -1012,7 +1082,16 @@ function AdminPanel({ fetchProfile }) {
   useEffect(() => { fetchUsers(); }, []);
   
   const fetchUsers = async () => {
-    const { data } = await supabase.from("profiles").select("*").order("is_approved", { ascending: true });
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("is_approved", { ascending: true });
+
+    if (error) {
+      console.error("Failed to load users:", error.message);
+      return;
+    }
+
     setUsers(data || []);
   };
   
