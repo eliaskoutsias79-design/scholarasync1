@@ -56,6 +56,12 @@ export default function App() {
     teacherClasses: "", teacherSubjects: "",
   });
   const [classSearch, setClassSearch] = useState("");
+  const [profileDraft, setProfileDraft] = useState({
+    fullName: "",
+    avatarUrl: "",
+    bio: "",
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -71,7 +77,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState(null);
 
   const isAdmin = session?.user?.email === ADMIN_EMAIL;
-  const googleAvatar = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || "";
+  const googleAvatar = profile?.avatar_url || session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || "";
   const firstName = (profile?.full_name || session?.user?.user_metadata?.full_name || "there").split(" ")[0];
   const filteredAvailableClasses = AVAILABLE_CLASSES.filter(cls =>
     cls.toLowerCase().includes(classSearch.trim().toLowerCase())
@@ -115,6 +121,12 @@ export default function App() {
       title: "User Management",
       description: "Review registration requests and control access.",
       icon: "🛡️",
+    },
+    profile: {
+      eyebrow: "Account",
+      title: "Profile",
+      description: "Personalize how your account appears across ScholarAsync.",
+      icon: "👤",
     },
   };
 
@@ -366,6 +378,55 @@ export default function App() {
     }
 
     await fetchProfile(session.user);
+  };
+
+  useEffect(() => {
+    if (!profile) return;
+    setProfileDraft({
+      fullName: profile.full_name || "",
+      avatarUrl: profile.avatar_url || "",
+      bio: profile.bio || "",
+    });
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    if (!session?.user?.id || !profile) return;
+
+    const cleanName = profileDraft.fullName.trim();
+    const cleanAvatar = profileDraft.avatarUrl.trim();
+    const cleanBio = profileDraft.bio.trim();
+
+    if (!cleanName) {
+      showError("Your display name cannot be empty.");
+      return;
+    }
+
+    if (cleanAvatar && !/^https?:\/\//i.test(cleanAvatar)) {
+      showError("Profile picture must be a valid http or https image URL.");
+      return;
+    }
+
+    setSavingProfile(true);
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: cleanName,
+        avatar_url: cleanAvatar || null,
+        bio: cleanBio || null,
+      })
+      .eq("id", session.user.id)
+      .select()
+      .single();
+
+    if (error) {
+      showError("Could not save profile: " + error.message);
+      setSavingProfile(false);
+      return;
+    }
+
+    setProfile(data);
+    setSavingProfile(false);
   };
 
   const toggleClass = (cls) => setSelectedClasses(prev => prev.includes(cls) ? prev.filter(c => c !== cls) : [...prev, cls]);
@@ -734,6 +795,7 @@ export default function App() {
           <button className={view === "announcements" ? "active" : ""} onClick={() => setView("announcements")}><span className="icon-span">📣</span><span className="desktop-only">Announcements</span></button>
           <button className={view === "messages" ? "active" : ""} onClick={() => setView("messages")}><span className="icon-span">💬</span><span className="desktop-only">Messages</span></button>
           <button className={view === "grades" ? "active" : ""} onClick={() => setView("grades")}><span className="icon-span">📊</span><span className="desktop-only">Grades</span></button>
+          <button className={view === "profile" ? "active" : ""} onClick={() => setView("profile")}><span className="icon-span">👤</span><span className="desktop-only">Profile</span></button>
           {isAdmin && <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}><span className="icon-span">🛡️</span><span className="desktop-only">Admin</span></button>}
         </nav>
         <div className="user-tag">
@@ -789,7 +851,17 @@ export default function App() {
         </header>
 
         <section className="page-surface">
-        {view === "admin" ? (
+        {view === "profile" ? (
+          <ProfileView
+            profile={profile}
+            session={session}
+            profileDraft={profileDraft}
+            setProfileDraft={setProfileDraft}
+            savingProfile={savingProfile}
+            onSave={handleSaveProfile}
+            avatarUrl={googleAvatar}
+          />
+        ) : view === "admin" ? (
           <AdminPanel fetchProfile={() => fetchProfile(session?.user)} />
         ) : view === "materials" ? (
           <div className="materials-container">
@@ -1370,6 +1442,158 @@ function StudentDMView({ profile, session, showError }) {
 // ============================================================
 // AUXILIARY COMPONENTS & TOASTS
 // ============================================================
+
+
+function ProfileView({
+  profile,
+  session,
+  profileDraft,
+  setProfileDraft,
+  savingProfile,
+  onSave,
+  avatarUrl,
+}) {
+  const initial = (profileDraft.fullName || profile?.email || "S")
+    .charAt(0)
+    .toUpperCase();
+
+  return (
+    <div className="profile-page">
+      <section className="profile-hero-card">
+        <div className="profile-cover" />
+        <div className="profile-identity">
+          <div className="profile-avatar-large">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <span>{initial}</span>
+            )}
+          </div>
+
+          <div className="profile-identity-copy">
+            <span className="profile-role-badge">
+              {profile?.role || "Member"}
+            </span>
+            <h2>{profileDraft.fullName || "ScholarAsync User"}</h2>
+            <p>{session?.user?.email}</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="profile-settings-grid">
+        <section className="profile-settings-card">
+          <div className="profile-card-heading">
+            <div>
+              <span>Personal details</span>
+              <h3>Edit your profile</h3>
+            </div>
+            <span className="profile-card-icon">✦</span>
+          </div>
+
+          <label className="profile-field">
+            <span>Display name</span>
+            <input
+              value={profileDraft.fullName}
+              onChange={(e) =>
+                setProfileDraft((current) => ({
+                  ...current,
+                  fullName: e.target.value,
+                }))
+              }
+              placeholder="Your name"
+              maxLength={80}
+            />
+          </label>
+
+          <label className="profile-field">
+            <span>Profile picture URL</span>
+            <input
+              type="url"
+              value={profileDraft.avatarUrl}
+              onChange={(e) =>
+                setProfileDraft((current) => ({
+                  ...current,
+                  avatarUrl: e.target.value,
+                }))
+              }
+              placeholder="https://example.com/photo.jpg"
+            />
+            <small>Paste a direct image URL. Leave empty to use your Google picture.</small>
+          </label>
+
+          <label className="profile-field">
+            <span>Bio</span>
+            <textarea
+              rows={5}
+              value={profileDraft.bio}
+              onChange={(e) =>
+                setProfileDraft((current) => ({
+                  ...current,
+                  bio: e.target.value,
+                }))
+              }
+              placeholder="Write a short introduction..."
+              maxLength={240}
+            />
+            <small>{profileDraft.bio.length}/240 characters</small>
+          </label>
+
+          <button
+            type="button"
+            className="main-btn profile-save-btn"
+            onClick={onSave}
+            disabled={savingProfile}
+          >
+            {savingProfile ? "Saving..." : "Save changes"}
+          </button>
+        </section>
+
+        <aside className="profile-summary-card">
+          <span className="profile-summary-label">Profile preview</span>
+
+          <div className="profile-preview-avatar">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <span>{initial}</span>
+            )}
+          </div>
+
+          <h3>{profileDraft.fullName || "ScholarAsync User"}</h3>
+          <span className="profile-preview-role">{profile?.role || "Member"}</span>
+
+          <p>
+            {profileDraft.bio ||
+              "Your bio will appear here once you add one."}
+          </p>
+
+          <div className="profile-detail-list">
+            <div>
+              <span>Email</span>
+              <strong>{session?.user?.email}</strong>
+            </div>
+
+            <div>
+              <span>Class</span>
+              <strong>
+                {profile?.user_class ||
+                  profile?.requested_classes ||
+                  "Not assigned"}
+              </strong>
+            </div>
+
+            <div>
+              <span>Account status</span>
+              <strong className={profile?.is_approved ? "approved-text" : "pending-text"}>
+                {profile?.is_approved ? "Approved" : "Pending"}
+              </strong>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
 
 function ErrorToast({ message, onClose }) {
   if (!message) return null;
