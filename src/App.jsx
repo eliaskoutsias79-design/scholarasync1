@@ -783,6 +783,7 @@ export default function App() {
   }
   if (isMobile) {
     return <MobileDashboard />;
+  }
   
   return (
     <div className="dashboard-layout">
