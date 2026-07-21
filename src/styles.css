@@ -2385,3 +2385,411 @@ textarea.main-input {
     width: 100%;
   }
 }
+/* ============================================================
+   MOBILE / TABLET RESPONSIVE LAYOUT
+   ============================================================ */
+
+@media (max-width: 900px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  .dashboard-layout {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  /* Turn the desktop sidebar into a bottom navigation bar */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+
+    width: 100%;
+    height: 72px;
+    min-height: 72px;
+
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-right: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+    z-index: 9999;
+  }
+
+  .sidebar-brand,
+  .user-tag {
+    display: none;
+  }
+
+  .sidebar nav {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 4px;
+  }
+
+  .sidebar nav button {
+    width: auto;
+    min-width: 42px;
+    height: 52px;
+    padding: 6px 8px;
+    margin: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+  }
+
+  .sidebar nav button .desktop-only {
+    display: none !important;
+  }
+
+  .sidebar nav button .icon-span {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  .sidebar nav button.active {
+    transform: none;
+  }
+
+  /* Main content now uses the full phone width */
+  .main-content {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0 !important;
+    padding-bottom: 88px;
+  }
+
+  .dashboard-topbar {
+    padding: 16px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .page-heading {
+    min-width: 0;
+  }
+
+  .page-title-row {
+    gap: 10px;
+  }
+
+  .page-title-row h1 {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  .page-title-row p {
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
+  .page-title-icon {
+    display: none;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .today-pill {
+    padding: 8px 10px;
+  }
+
+  .today-pill span {
+    display: none;
+  }
+
+  .topbar-profile {
+    padding: 6px;
+  }
+
+  .topbar-profile div {
+    display: none;
+  }
+
+  .page-surface {
+    width: 100%;
+    padding: 0 14px 24px;
+    box-sizing: border-box;
+  }
+
+  /* Profile page */
+  .profile-page {
+    width: 100%;
+  }
+
+  .profile-hero-card {
+    width: 100%;
+    border-radius: 18px;
+  }
+
+  .profile-cover {
+    height: 110px;
+  }
+
+  .profile-identity {
+    padding: 0 18px 18px;
+    align-items: flex-end;
+  }
+
+  .profile-avatar-large {
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+  }
+
+  .profile-identity-copy h2 {
+    font-size: 1.2rem;
+  }
+
+  .profile-identity-copy p {
+    max-width: 190px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Stack profile editor and profile preview */
+  .profile-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .profile-settings-card,
+  .profile-summary-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .profile-settings-card {
+    padding: 20px 16px;
+  }
+
+  .profile-summary-card {
+    padding: 22px 16px;
+  }
+
+  .profile-field input,
+  .profile-field textarea {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+
+  .profile-save-btn {
+    width: 100%;
+  }
+
+  .profile-detail-list strong {
+    max-width: 100%;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  /* General cards */
+  .calendar-card,
+  .materials-container,
+  .messaging-container,
+  .admin-panel {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .materials-grid,
+  .task-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .material-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Messages */
+  .dm-split {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .dm-sidebar {
+    width: 100%;
+    max-height: 210px;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .dm-chat {
+    min-height: 430px;
+  }
+
+  .chat-input-row {
+    gap: 8px;
+  }
+
+  .chat-input-row input {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    padding: 14px;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: none;
+    max-height: 88vh;
+    overflow-y: auto;
+
+    margin: 0;
+    padding: 22px 16px;
+
+    border-radius: 22px 22px 0 0;
+    box-sizing: border-box;
+  }
+
+  .modal-content input,
+  .modal-content select,
+  .modal-content textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+
+  .class-checkbox-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Authentication */
+  .auth-container {
+    padding: 16px;
+  }
+
+  .auth-shell {
+    width: 100%;
+    display: block;
+  }
+
+  .auth-showcase {
+    display: none;
+  }
+
+  .auth-card,
+  .onboarding-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .onboarding-top {
+    align-items: flex-start;
+  }
+
+  .role-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .class-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .onboarding-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .onboarding-submit {
+    width: 100%;
+  }
+}
+
+/* Extra-small phones */
+@media (max-width: 380px) {
+  .dashboard-topbar {
+    padding: 14px 12px;
+  }
+
+  .page-surface {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .page-title-row h1 {
+    font-size: 1.3rem;
+  }
+
+  .page-title-row p {
+    display: none;
+  }
+
+  .today-pill {
+    display: none;
+  }
+
+  .sidebar {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .sidebar nav {
+    gap: 1px;
+  }
+
+  .sidebar nav button {
+    min-width: 36px;
+    padding: 5px;
+  }
+
+  .sidebar nav button .icon-span {
+    font-size: 1rem;
+  }
+
+  .profile-identity {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .profile-avatar-large {
+    width: 62px;
+    height: 62px;
+    min-width: 62px;
+  }
+
+  .profile-identity-copy h2 {
+    font-size: 1.05rem;
+  }
+
+  .profile-settings-card,
+  .profile-summary-card {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
