@@ -105,47 +105,94 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, [isReady]);
 
-  const fetchProfile = async (user) => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      
-      const isSchoolLinked = user.identities?.some(id => id.provider === 'keycloak') || false;
-      let currentProfile = null;
+ const fetchProfile = async (user) => {
+  if (!user) return;
 
-      if (!error && data) {
-        currentProfile = data;
-      } else {
-        // Brand New Google User or Missing Row Fallback
-        const meta = user.user_metadata;
-        currentProfile = {
-          id: user.id,
-          email: user.email,
-          full_name: meta?.full_name || meta?.fullName || "Google User",
-          role: "SETUP_REQUIRED", // Flag forces the setup screen container to display
-          user_class: "Not Assigned",
-          requested_classes: "",
-          requested_subjects: "",
-          is_approved: user.email === ADMIN_EMAIL || isSchoolLinked
-        };
-      }
-      
-      setProfile(currentProfile);
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
 
-      // Only attempt data fetches if user isn't stuck behind onboarding walls
-      if (currentProfile.role !== "SETUP_REQUIRED") {
-        await Promise.all([
-          fetchEvents(currentProfile, user.id, user.email).catch(e => console.error(e)),
-          fetchMaterials(currentProfile).catch(e => console.error(e)),
-          fetchAnnouncements(currentProfile).catch(e => console.error(e)),
-        ]);
+    const schoolIdentity = user.identities?.find(
+      identity => identity.provider === "keycloak"
+    );
+
+    const isSchoolLinked = Boolean(schoolIdentity);
+    const schoolData = schoolIdentity?.identity_data;
+
+    const schoolUsername =
+      schoolData?.preferred_username ||
+      schoolData?.username ||
+      schoolData?.name ||
+      schoolData?.full_name ||
+      null;
+
+    let currentProfile;
+
+    if (!error && data) {
+      currentProfile = data;
+
+      if (
+        isSchoolLinked &&
+        schoolUsername &&
+        data.full_name !== schoolUsername
+      ) {
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            full_name: schoolUsername,
+            is_approved: true,
+          })
+          .eq("id", user.id)
+          .select()
+          .single();
+
+        if (!updateError && updatedProfile) {
+          currentProfile = updatedProfile;
+        } else if (updateError) {
+          console.error(
+            "Failed to save school username:",
+            updateError.message
+          );
+        }
       }
-    } catch (err) {
-      console.error("Profile parsing issue:", err);
-    } finally {
-      setLoading(false);
+    } else {
+      const meta = user.user_metadata || {};
+
+      currentProfile = {
+        id: user.id,
+        email: user.email,
+        full_name:
+          schoolUsername ||
+          meta.full_name ||
+          meta.fullName ||
+          "New User",
+        role: "SETUP_REQUIRED",
+        user_class: "Not Assigned",
+        requested_classes: "",
+        requested_subjects: "",
+        is_approved:
+          user.email === ADMIN_EMAIL || isSchoolLinked,
+      };
     }
-  };
+
+    setProfile(currentProfile);
+
+    if (currentProfile.role !== "SETUP_REQUIRED") {
+      await Promise.all([
+        fetchEvents(currentProfile, user.id, user.email),
+        fetchMaterials(currentProfile),
+        fetchAnnouncements(currentProfile),
+      ]);
+    }
+  } catch (err) {
+    console.error("Profile parsing issue:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchEvents = async (prof, userId, userEmail) => {
     if (!prof || prof.role === "SETUP_REQUIRED") return;
