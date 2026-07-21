@@ -45,7 +45,6 @@ function GoogleIcon() {
 
 export default function App() {
   const [session, setSession] = useState(null);
-  const isMobile = useIsMobile();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
@@ -781,24 +780,6 @@ export default function App() {
       </div>
     );
   }
-  if (isMobile) {
-  return (
-    <MobileDashboard
-      session={session}
-      profile={profile}
-      email={email}
-      setEmail={setEmail}
-      password={password}
-      setPassword={setPassword}
-      authMode={authMode}
-      setAuthMode={setAuthMode}
-      loading={loading}
-      handleAuth={handleAuth}
-      handleGoogleLogin={handleGoogleLogin}
-      signOut={signOut}
-    />
-  );
-}
   
   return (
     <div className="dashboard-layout">
