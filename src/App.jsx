@@ -4,6 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
 import "./styles.css";
+import "./glowup.css";
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com";
 
@@ -29,6 +30,18 @@ const formatClassName = (input) => {
   return map[input.toUpperCase().trim()] || input.trim();
 };
 
+
+function GoogleIcon() {
+  return (
+    <svg className="google-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M21.6 12.23c0-.73-.07-1.43-.19-2.1H12v3.98h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.41Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 4.98-.9 6.63-2.36l-3.24-2.51c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.59A10 10 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.39 13.96A6 6 0 0 1 6.08 12c0-.68.12-1.34.31-1.96V7.45H3.04A10 10 0 0 0 2 12c0 1.61.38 3.13 1.04 4.55l3.35-2.59Z" />
+      <path fill="#EA4335" d="M12 5.91c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.97 2.93 14.7 2 12 2a10 10 0 0 0-8.96 5.45l3.35 2.59C7.18 7.67 9.39 5.91 12 5.91Z" />
+    </svg>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -43,6 +56,7 @@ export default function App() {
     email: "", password: "", fullName: "", role: "student", userClass: "Junior High A1",
     teacherClasses: "", teacherSubjects: "",
   });
+  const [classSearch, setClassSearch] = useState("");
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -58,6 +72,11 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState(null);
 
   const isAdmin = session?.user?.email === ADMIN_EMAIL;
+  const googleAvatar = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || "";
+  const firstName = (profile?.full_name || session?.user?.user_metadata?.full_name || "there").split(" ")[0];
+  const filteredAvailableClasses = AVAILABLE_CLASSES.filter(cls =>
+    cls.toLowerCase().includes(classSearch.trim().toLowerCase())
+  );
 
   const showError = (msg) => {
     setErrorMsg(msg);
@@ -356,86 +375,285 @@ export default function App() {
 
   if (!session) {
     return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <div className="text-logo">Scholar<span>Async</span></div>
-            <p className="auth-subtitle">Welcome to your educational portal</p>
-          </div>
-          <input type="email" placeholder="Email" value={authData.email} onChange={e => setAuthData({ ...authData, email: e.target.value })} />
-          <input type="password" placeholder="Password" value={authData.password} onChange={e => setAuthData({ ...authData, password: e.target.value })} />
-          {authMode === "signup" && (
-            <div className="signup-fields">
-              <input placeholder="Full Name" value={authData.fullName} onChange={e => setAuthData({ ...authData, fullName: e.target.value })} />
-              <select value={authData.role} onChange={e => setAuthData({ ...authData, role: e.target.value })}>
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-              </select>
-              {authData.role === "student" ? (
-                <select value={authData.userClass} onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
-                  {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              ) : (
-                <>
-                  <input placeholder="Classes (e.g. JA1, HA2)" value={authData.teacherClasses} onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })} />
-                  <input placeholder="Subjects (e.g. Math, History)" value={authData.teacherSubjects} onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
-                </>
-              )}
+      <div className="auth-container glow-auth">
+        <div className="auth-orb auth-orb-one" />
+        <div className="auth-orb auth-orb-two" />
+
+        <div className="auth-shell">
+          <section className="auth-showcase">
+            <div className="showcase-badge">Built for modern classrooms</div>
+            <div className="showcase-logo">Scholar<span>Async</span></div>
+            <h1>Everything your class needs, in one calm workspace.</h1>
+            <p>
+              Assignments, announcements, materials, messages and grades—
+              organized without the noise.
+            </p>
+
+            <div className="showcase-points">
+              <div><span>✓</span> One dashboard for students and teachers</div>
+              <div><span>✓</span> Fast Google or email access</div>
+              <div><span>✓</span> Secure approval before entering</div>
             </div>
-          )}
-          <button className="main-btn" onClick={handleAuth}>{authMode === "login" ? "Login" : "Request Access"}</button>
-          
-          <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', width: '100%' }}>
-            <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #444' }} />
-            <span style={{ color: '#aaa', padding: '0 10px', fontSize: '0.85rem' }}>OR</span>
-            <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #444' }} />
+          </section>
+
+          <div className="auth-card glow-card">
+            <div className="auth-header">
+              <div className="text-logo">Scholar<span>Async</span></div>
+              <h2>{authMode === "login" ? "Welcome back" : "Create your account"}</h2>
+              <p className="auth-subtitle">
+                {authMode === "login"
+                  ? "Sign in to continue to your educational portal."
+                  : "Tell us who you are, then wait for administrator approval."}
+              </p>
+            </div>
+
+            <div className="auth-form-stack">
+              {authMode === "signup" && (
+                <div className="signup-fields">
+                  <label className="field-label">
+                    Full name
+                    <input
+                      className="glow-input"
+                      placeholder="Nikolaos Koutsias"
+                      value={authData.fullName}
+                      onChange={e => setAuthData({ ...authData, fullName: e.target.value })}
+                    />
+                  </label>
+
+                  <div className="role-choice compact-role-choice">
+                    <button
+                      type="button"
+                      className={authData.role === "student" ? "role-card active" : "role-card"}
+                      onClick={() => setAuthData({ ...authData, role: "student" })}
+                    >
+                      <span className="role-icon">🎓</span>
+                      <span><strong>Student</strong><small>Join your class</small></span>
+                    </button>
+                    <button
+                      type="button"
+                      className={authData.role === "teacher" ? "role-card active" : "role-card"}
+                      onClick={() => setAuthData({ ...authData, role: "teacher" })}
+                    >
+                      <span className="role-icon">🧑‍🏫</span>
+                      <span><strong>Teacher</strong><small>Manage classes</small></span>
+                    </button>
+                  </div>
+
+                  {authData.role === "student" ? (
+                    <label className="field-label">
+                      Class
+                      <select
+                        className="glow-input dark-select"
+                        value={authData.userClass}
+                        onChange={e => setAuthData({ ...authData, userClass: e.target.value })}
+                      >
+                        {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </label>
+                  ) : (
+                    <>
+                      <label className="field-label">
+                        Classes you teach
+                        <input
+                          className="glow-input"
+                          placeholder="JA1, JB2, HA1"
+                          value={authData.teacherClasses}
+                          onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })}
+                        />
+                      </label>
+                      <label className="field-label">
+                        Subjects
+                        <input
+                          className="glow-input"
+                          placeholder="Math, Physics"
+                          value={authData.teacherSubjects}
+                          onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <label className="field-label">
+                Email
+                <input
+                  className="glow-input"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={authData.email}
+                  onChange={e => setAuthData({ ...authData, email: e.target.value })}
+                />
+              </label>
+
+              <label className="field-label">
+                Password
+                <input
+                  className="glow-input"
+                  type="password"
+                  placeholder="Your password"
+                  value={authData.password}
+                  onChange={e => setAuthData({ ...authData, password: e.target.value })}
+                  onKeyDown={e => e.key === "Enter" && handleAuth()}
+                />
+              </label>
+
+              <button className="main-btn glow-primary-btn" onClick={handleAuth}>
+                {authMode === "login" ? "Sign in" : "Request access"}
+              </button>
+
+              <div className="auth-divider">
+                <span>or continue with</span>
+              </div>
+
+              <button className="google-login-btn" onClick={handleGoogleLogin}>
+                <GoogleIcon />
+                <span>Google</span>
+              </button>
+
+              <p className="auth-toggle" onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
+                {authMode === "login" ? (
+                  <>New to ScholarAsync? <strong>Create an account</strong></>
+                ) : (
+                  <>Already registered? <strong>Sign in</strong></>
+                )}
+              </p>
+            </div>
           </div>
-
-          <button className="main-btn google-btn" onClick={handleGoogleLogin} style={{ background: '#fff', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.2rem' }}>🌐</span> Continue with Google
-          </button>
-
-          <p className="auth-toggle" onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
-            {authMode === "login" ? "Don't have an account? Create one" : "Already have an account? Login here"}
-          </p>
         </div>
       </div>
     );
   }
 
-  // Google First-Time Login Interceptor Screen
+  // First-time Google onboarding
   if (profile && profile.role === "SETUP_REQUIRED") {
     return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <div className="text-logo">Scholar<span>Async</span></div>
-            <p className="auth-subtitle">Finish setting up your account</p>
+      <div className="auth-container glow-auth">
+        <div className="auth-orb auth-orb-one" />
+        <div className="auth-orb auth-orb-two" />
+
+        <div className="onboarding-card glow-card">
+          <div className="onboarding-top">
+            {googleAvatar ? (
+              <img className="profile-avatar" src={googleAvatar} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="profile-avatar avatar-fallback">{firstName.charAt(0).toUpperCase()}</div>
+            )}
+            <div>
+              <span className="eyebrow">Google account connected</span>
+              <h1>Welcome, {firstName} 👋</h1>
+              <p>Complete your ScholarAsync profile before requesting access.</p>
+            </div>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px', width: '100%' }}>
-            <label style={{ fontSize: '0.9rem', color: '#ccc', textAlign: 'left' }}>
-              Registering as: <strong style={{ color: '#fff' }}>{profile.full_name}</strong>
-            </label>
-            
-            <select className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} value={authData.role} onChange={e => setAuthData({ ...authData, role: e.target.value })}>
-              <option value="student">I am a Student</option>
-              <option value="teacher">I am a Teacher</option>
-            </select>
+
+          <div className="onboarding-section">
+            <div className="section-heading">
+              <span>1</span>
+              <div>
+                <h3>Choose your role</h3>
+                <p>This controls the tools you will see after approval.</p>
+              </div>
+            </div>
+
+            <div className="role-choice">
+              <button
+                type="button"
+                className={authData.role === "student" ? "role-card active" : "role-card"}
+                onClick={() => setAuthData({ ...authData, role: "student" })}
+              >
+                <span className="role-icon">🎓</span>
+                <span>
+                  <strong>Student</strong>
+                  <small>View assignments, materials, messages and grades</small>
+                </span>
+                <span className="role-check">✓</span>
+              </button>
+
+              <button
+                type="button"
+                className={authData.role === "teacher" ? "role-card active" : "role-card"}
+                onClick={() => setAuthData({ ...authData, role: "teacher" })}
+              >
+                <span className="role-icon">🧑‍🏫</span>
+                <span>
+                  <strong>Teacher</strong>
+                  <small>Post work, share resources and communicate</small>
+                </span>
+                <span className="role-check">✓</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="onboarding-section">
+            <div className="section-heading">
+              <span>2</span>
+              <div>
+                <h3>{authData.role === "student" ? "Select your class" : "Tell us what you teach"}</h3>
+                <p>{authData.role === "student" ? "Search and choose one class." : "Use commas to separate multiple entries."}</p>
+              </div>
+            </div>
 
             {authData.role === "student" ? (
-              <select className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} value={authData.userClass} onChange={e => setAuthData({ ...authData, userClass: e.target.value })}>
-                {AVAILABLE_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            ) : (
               <>
-                <input className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} placeholder="Classes you teach (e.g. JA1, JB2)" value={authData.teacherClasses} onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })} />
-                <input className="main-input" style={{ width: '100%', padding: '10px', borderRadius: '8px' }} placeholder="Subjects (e.g. Math, Physics)" value={authData.teacherSubjects} onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })} />
-              </>
-            )}
+                <div className="class-search-wrap">
+                  <span>⌕</span>
+                  <input
+                    className="glow-input"
+                    placeholder="Search classes..."
+                    value={classSearch}
+                    onChange={e => setClassSearch(e.target.value)}
+                  />
+                </div>
 
-            <button className="main-btn" onClick={handlePostGoogleOnboarding}>
-              Complete Registration
+                <div className="class-grid" role="listbox" aria-label="Choose your class">
+                  {filteredAvailableClasses.map(cls => (
+                    <button
+                      type="button"
+                      key={cls}
+                      className={authData.userClass === cls ? "class-chip active" : "class-chip"}
+                      onClick={() => setAuthData({ ...authData, userClass: cls })}
+                    >
+                      {cls}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="teacher-fields">
+                <label className="field-label">
+                  Classes you teach
+                  <input
+                    className="glow-input"
+                    placeholder="JA1, JB2, High School A1"
+                    value={authData.teacherClasses}
+                    onChange={e => setAuthData({ ...authData, teacherClasses: e.target.value })}
+                  />
+                </label>
+                <label className="field-label">
+                  Subjects
+                  <input
+                    className="glow-input"
+                    placeholder="Math, Physics, History"
+                    value={authData.teacherSubjects}
+                    onChange={e => setAuthData({ ...authData, teacherSubjects: e.target.value })}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
+          <div className="onboarding-footer">
+            <div className="signed-in-note">
+              <span>🔒</span>
+              <div>
+                <small>Signed in securely as</small>
+                <strong>{session?.user?.email}</strong>
+              </div>
+            </div>
+
+            <button className="main-btn glow-primary-btn onboarding-submit" onClick={handlePostGoogleOnboarding}>
+              Complete registration
+              <span>→</span>
             </button>
           </div>
         </div>
