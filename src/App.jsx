@@ -4,6 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { supabase } from "./supabaseClient";
 import "./styles.css";
+import useIsMobile from "./hooks/useIsMobile";
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com";
 
