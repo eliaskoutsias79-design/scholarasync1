@@ -789,3 +789,15 @@ body {
     color: #94a3b8; 
   }
 }
+/* Better dropdown styling */
+select,
+.main-input {
+    background: #1f1f25;
+    color: #fff;
+    border: 1px solid #444;
+}
+
+select option {
+    background: #1f1f25;
+    color: #fff;
+}
