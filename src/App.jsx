@@ -781,7 +781,9 @@ export default function App() {
       </div>
     );
   }
-
+  if (isMobile) {
+    return <MobileDashboard />;
+  
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
