@@ -115,49 +115,29 @@ export default function App() {
       .eq("id", user.id)
       .single();
 
-    const schoolIdentity = user.identities?.find(
-      identity => identity.provider === "keycloak"
-    );
+    const provider =
+      user.app_metadata?.provider ||
+      user.identities?.[0]?.provider ||
+      "";
 
-    const isSchoolLinked = Boolean(schoolIdentity);
-    const schoolData = schoolIdentity?.identity_data;
+    const isGoogleUser = provider === "google";
 
-    const schoolUsername =
-      schoolData?.preferred_username ||
-      schoolData?.username ||
-      schoolData?.name ||
-      schoolData?.full_name ||
-      null;
+    const setupIsIncomplete =
+      !data?.role ||
+      data.role === "SETUP_REQUIRED" ||
+      (
+        data.role === "student" &&
+        (!data.user_class || data.user_class === "Not Assigned")
+      ) ||
+      (
+        data.role === "teacher" &&
+        (!data.requested_classes || !data.requested_subjects)
+      );
 
     let currentProfile;
 
-    if (!error && data) {
+    if (!error && data && !(isGoogleUser && setupIsIncomplete)) {
       currentProfile = data;
-
-      if (
-        isSchoolLinked &&
-        schoolUsername &&
-        data.full_name !== schoolUsername
-      ) {
-        const { data: updatedProfile, error: updateError } = await supabase
-          .from("profiles")
-          .update({
-            full_name: schoolUsername,
-            is_approved: true,
-          })
-          .eq("id", user.id)
-          .select()
-          .single();
-
-        if (!updateError && updatedProfile) {
-          currentProfile = updatedProfile;
-        } else if (updateError) {
-          console.error(
-            "Failed to save school username:",
-            updateError.message
-          );
-        }
-      }
     } else {
       const meta = user.user_metadata || {};
 
@@ -165,16 +145,16 @@ export default function App() {
         id: user.id,
         email: user.email,
         full_name:
-          schoolUsername ||
           meta.full_name ||
           meta.fullName ||
+          meta.name ||
+          user.email?.split("@")[0] ||
           "New User",
         role: "SETUP_REQUIRED",
-        user_class: "Not Assigned",
+        user_class: null,
         requested_classes: "",
         requested_subjects: "",
-        is_approved:
-          user.email === ADMIN_EMAIL || isSchoolLinked,
+        is_approved: user.email === ADMIN_EMAIL,
       };
     }
 
