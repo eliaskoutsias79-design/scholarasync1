@@ -782,8 +782,23 @@ export default function App() {
     );
   }
   if (isMobile) {
-    return <MobileDashboard />;
-  }
+  return (
+    <MobileDashboard
+      session={session}
+      profile={profile}
+      email={email}
+      setEmail={setEmail}
+      password={password}
+      setPassword={setPassword}
+      authMode={authMode}
+      setAuthMode={setAuthMode}
+      loading={loading}
+      handleAuth={handleAuth}
+      handleGoogleLogin={handleGoogleLogin}
+      signOut={signOut}
+    />
+  );
+}
   
   return (
     <div className="dashboard-layout">
