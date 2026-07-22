@@ -40,7 +40,7 @@ const translations = {
     "Class Chat": "Συνομιλία τάξης", "Direct Messages": "Άμεσα μηνύματα", "No messages yet. Say hello! 👋": "Δεν υπάρχουν μηνύματα ακόμη. Πείτε ένα γεια! 👋", "Type a message...": "Γράψτε ένα μήνυμα...", "Send": "Αποστολή", "Search students...": "Αναζήτηση μαθητών...", "No students found.": "Δεν βρέθηκαν μαθητές.", "Select a student to start chatting": "Επιλέξτε μαθητή για να ξεκινήσετε συνομιλία",
     "YOUR TEACHERS": "ΟΙ ΚΑΘΗΓΗΤΕΣ ΣΑΣ", "No conversations yet.": "Δεν υπάρχουν συνομιλίες ακόμη.", "Select a conversation": "Επιλέξτε συνομιλία", "No messages yet.": "Δεν υπάρχουν μηνύματα ακόμη.", "Reply...": "Απάντηση...",
     "Personal details": "Προσωπικά στοιχεία", "Edit your profile": "Επεξεργασία προφίλ", "Display name": "Εμφανιζόμενο όνομα", "Your name": "Το όνομά σας", "Profile picture": "Εικόνα προφίλ", "Uploading...": "Μεταφόρτωση...", "Upload image": "Μεταφόρτωση εικόνας", "Remove image": "Αφαίρεση εικόνας", "Bio": "Βιογραφικό", "Write a short introduction...": "Γράψτε μια σύντομη παρουσίαση...", "Saving...": "Αποθήκευση...", "Uploading image...": "Μεταφόρτωση εικόνας...", "Save changes": "Αποθήκευση αλλαγών", "Profile preview": "Προεπισκόπηση προφίλ", "Your bio will appear here once you add one.": "Το βιογραφικό σας θα εμφανιστεί εδώ μόλις προσθέσετε ένα.", "Not assigned": "Δεν έχει οριστεί", "Account status": "Κατάσταση λογαριασμού", "Approved": "Εγκρίθηκε", "Pending": "Σε αναμονή",
-    "User Management": "Διαχείριση χρηστών", "No Class Assigned": "Δεν έχει οριστεί τάξη", "Revoke Access": "Ανάκληση πρόσβασης", "Approve User": "Έγκριση χρήστη", "Loading grades...": "Φόρτωση βαθμών...", "Academic Records": "Ακαδημαϊκά στοιχεία", "Assign Grade": "Καταχώριση βαθμού", "No grades recorded yet.": "Δεν έχουν καταχωριστεί βαθμοί ακόμη.", "No teacher comments.": "Δεν υπάρχουν σχόλια καθηγητή.", "Assign New Grade": "Καταχώριση νέου βαθμού", "Select Student": "Επιλέξτε μαθητή", "Grade (e.g. A, 19, 95%)": "Βαθμός (π.χ. Α, 19, 95%)", "Comments (Optional)": "Σχόλια (προαιρετικά)", "Save Grade": "Αποθήκευση βαθμού",
+    "User Management": "Διαχείριση χρηστών", "No Class Assigned": "Δεν έχει οριστεί τάξη", "Revoke Access": "Ανάκληση πρόσβασης", "Approve User": "Έγκριση χρήστη", "Loading grades...": "Φόρτωση βαθμών...", "Academic Records": "Ακαδημαϊκά στοιχεία", "Assign Grade": "Καταχώριση βαθμού", "No grades recorded yet.": "Δεν έχουν καταχωριστεί βαθμοί ακόμη.", "Your grades and teacher feedback will appear here.": "Οι βαθμοί και τα σχόλια των καθηγητών σας θα εμφανίζονται εδώ.", "Start by recording a student's result.": "Ξεκινήστε καταχωρίζοντας έναν βαθμό μαθητή.", "No teacher comments.": "Δεν υπάρχουν σχόλια καθηγητή.", "Assign New Grade": "Καταχώριση νέου βαθμού", "Select Student": "Επιλέξτε μαθητή", "Grade (e.g. A, 19, 95%)": "Βαθμός (π.χ. Α, 19, 95%)", "Comments (Optional)": "Σχόλια (προαιρετικά)", "Save Grade": "Αποθήκευση βαθμού",
     "Workspace": "Χώρος εργασίας", "Resources": "Πόροι", "Updates": "Ενημερώσεις", "Communication": "Επικοινωνία", "Progress": "Πρόοδος", "Administration": "Διαχείριση", "Account": "Λογαριασμός",
     "Assignments and deadlines for your class.": "Εργασίες και προθεσμίες για την τάξη σας.", "Plan assignments and keep every class on schedule.": "Οργανώστε εργασίες και κρατήστε κάθε τάξη στο πρόγραμμα.", "Keep notes, links and learning resources organized by class.": "Κρατήστε σημειώσεις, συνδέσμους και εκπαιδευτικούς πόρους οργανωμένους ανά τάξη.", "Share important classroom news without losing it in chat.": "Μοιραστείτε σημαντικά νέα της τάξης χωρίς να χάνονται στη συνομιλία.", "Class conversations and direct communication in one place.": "Συνομιλίες τάξης και άμεση επικοινωνία σε ένα μέρος.", "Review results, feedback and student progress.": "Δείτε αποτελέσματα, σχόλια και πρόοδο μαθητών.", "Review registration requests and control access.": "Ελέγξτε αιτήματα εγγραφής και διαχειριστείτε την πρόσβαση.", "Personalize how your account appears across ScholarAsync.": "Προσαρμόστε την εμφάνιση του λογαριασμού σας στο ScholarAsync."
   }
@@ -80,6 +80,65 @@ const translateRenderedUI = (language) => {
 };
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com";
+
+// Visual layer only: keeps the existing layout/components and makes every
+// workspace page use the same calm, mobile-first card treatment.
+function WorkspacePolish() {
+  return <style>{`
+    .dashboard-layout { background: radial-gradient(circle at 100% 0%, #eeeaff 0, transparent 32%), #f6f7fc; }
+    .main-content { background: transparent; }
+    .page-surface { border: 1px solid rgba(119,87,232,.10); box-shadow: 0 12px 34px rgba(31,22,72,.06); }
+    .calendar-card, .materials-container, .admin-panel, .profile-shell, .messaging-container { border-radius: 20px; }
+    .materials-container, .admin-panel { padding: clamp(16px, 3vw, 28px); }
+    .materials-container h2, .admin-panel h2 { letter-spacing: -.025em; }
+    .materials-grid, .announcements-list, .task-grid { gap: 14px; }
+    .material-card, .announcement-card, .task-item { border: 1px solid #eceaf6; border-radius: 16px; box-shadow: 0 6px 18px rgba(31,22,72,.045); transition: transform .18s ease, box-shadow .18s ease; }
+    .material-card:hover, .announcement-card:hover, .task-item:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(31,22,72,.08); }
+    .calendar-card { overflow: hidden; border: 1px solid #eceaf6; box-shadow: 0 8px 24px rgba(31,22,72,.05); }
+    .chat-layout, .dm-layout, .dm-split, .profile-page { border-radius: 18px; overflow: hidden; border: 1px solid #eceaf6; box-shadow: 0 8px 24px rgba(31,22,72,.05); }
+    .msg-tabs { padding: 6px; gap: 6px; background: #f7f6fc; border-radius: 14px; }
+    .msg-tabs button { border-radius: 10px; }
+    .chat-messages, .dm-chat { background: linear-gradient(180deg, #fff 0%, #fafaff 100%); }
+    .chat-input-row { padding: 12px; background: #fff; border-top: 1px solid #eceaf6; }
+    .chat-input-row input { border-radius: 12px; }
+    .profile-hero-card, .profile-settings-card, .profile-summary-card { border: 1px solid #eceaf6; border-radius: 18px; box-shadow: 0 8px 24px rgba(31,22,72,.05); }
+    .fc .fc-toolbar { padding: 16px 16px 0; gap: 10px; flex-wrap: wrap; }
+    .fc .fc-toolbar-title { font-size: clamp(1rem, 4.5vw, 1.25rem); }
+    .fc .fc-button { border-radius: 9px !important; border: 0 !important; box-shadow: none !important; }
+    .fc .fc-daygrid-day-frame { min-height: 84px; }
+    @media (max-width: 720px) {
+      .main-content { padding-bottom: 82px; }
+      .dashboard-topbar { padding: 16px 12px 12px; }
+      .page-heading h1 { font-size: 1.35rem; }
+      .page-heading p { font-size: .82rem; line-height: 1.4; max-width: 280px; }
+      .topbar-actions .today-pill, .topbar-actions .topbar-profile { display: none; }
+      .topbar-actions { width: 100%; justify-content: flex-start; }
+      .language-switcher { width: 100%; }
+      .language-switcher button { flex: 1; font-size: .78rem; }
+      .page-surface { margin: 0 10px; border-radius: 20px; min-height: calc(100dvh - 230px); }
+      .materials-container, .admin-panel { padding: 16px; }
+      .materials-container > div:first-child { align-items: flex-start !important; }
+      .materials-container > div:first-child .main-btn { width: 100% !important; }
+      .material-card, .announcement-card, .task-item { padding: 15px; }
+      .material-card { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .material-card > div:last-child { width: 100%; }
+      .material-card > div:last-child .main-btn { flex: 1; text-align: center; padding: 9px 12px !important; }
+      .announcement-header { align-items: flex-start; gap: 9px; }
+      .chat-layout, .dm-layout, .dm-split { min-height: calc(100dvh - 280px); border-radius: 14px; }
+      .dm-sidebar { max-height: 150px; }
+      .msg-tabs { margin-bottom: 12px; }
+      .msg-tabs button { font-size: .78rem; padding: 9px 8px; }
+      .profile-page { border: 0; box-shadow: none; }
+      .profile-settings-grid { grid-template-columns: 1fr; gap: 14px; }
+      .fc .fc-toolbar { justify-content: center; padding: 12px 8px 0; }
+      .fc .fc-toolbar-chunk { display: flex; justify-content: center; }
+      .fc .fc-button { padding: .42em .6em !important; font-size: .78rem !important; }
+      .fc .fc-daygrid-day-frame { min-height: 58px; }
+      .fc .fc-daygrid-day-number { font-size: .78rem; }
+      .fc .fc-event { font-size: .66rem; padding: 1px 2px; }
+    }
+  `}</style>;
+}
 
 const AVAILABLE_CLASSES = [
   "Junior High A1", "Junior High A2", "Junior High A3", "Junior High A4", "Junior High A5",
@@ -572,9 +631,9 @@ export default function App() {
         <div className="auth-orb auth-orb-two" />
 
         <div className="auth-shell">
-          <div className="language-switcher" role="group" aria-label="Language selector" style={{ position: "absolute", top: "20px", right: "20px", zIndex: 5, display: "flex", gap: "6px" }}>
-            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("en")}>🇬🇧 English</button>
-            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("el")}>🇬🇷 Ελληνικά</button>
+          <div className="language-switcher" role="group" aria-label="Language selector" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", right: "max(12px, env(safe-area-inset-right))", zIndex: 20, display: "flex", gap: "6px", maxWidth: "calc(100vw - 24px)", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px", whiteSpace: "nowrap" }} onClick={() => setLanguage("en")}>🇬🇧 English</button>
+            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px", whiteSpace: "nowrap" }} onClick={() => setLanguage("el")}>🇬🇷 Ελληνικά</button>
           </div>
           <section className="auth-showcase">
             <div className="showcase-badge">Built for modern classrooms</div>
@@ -874,6 +933,7 @@ export default function App() {
   
   return (
     <div className="dashboard-layout">
+      <WorkspacePolish />
       <aside className="sidebar">
         <div className="sidebar-brand">
           <div className="brand-mark">S</div>
@@ -1922,17 +1982,32 @@ function GradesView({ profile, isAdmin }) {
 
   if (loading) return <div className="p-4">Loading grades...</div>;
 
+  const canAssignGrades = profile?.role === "teacher" || isAdmin;
+  const emptyMessage = canAssignGrades
+    ? "Start by recording a student's result."
+    : "Your grades and teacher feedback will appear here.";
+
   return (
-    <div className="materials-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2>📊 Academic Records</h2>
-        {(profile?.role === "teacher" || isAdmin) && (
-          <button className="main-btn" style={{ width: 'auto', padding: '10px 20px' }} onClick={() => setShowModal(true)}>+ Assign Grade</button>
+    <div className="materials-container" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 'clamp(1.12rem, 4.8vw, 1.4rem)' }}>📊 Academic Records</h2>
+          <p style={{ margin: '5px 0 0', color: 'var(--text-muted)', fontSize: '0.88rem' }}>Results, feedback and progress</p>
+        </div>
+        {canAssignGrades && (
+          <button className="main-btn" style={{ width: 'auto', padding: '10px 16px', whiteSpace: 'nowrap' }} onClick={() => setShowModal(true)}>+ Assign Grade</button>
         )}
       </div>
 
-      <div className="task-grid">
-        {grades.length === 0 ? <p>No grades recorded yet.</p> : grades.map(g => (
+      <div className="task-grid" style={grades.length === 0 ? { flex: 1, display: 'flex' } : undefined}>
+        {grades.length === 0 ? (
+          <div style={{ width: '100%', minHeight: '250px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '28px 18px', border: '1px dashed #d9d3fb', borderRadius: '18px', background: 'linear-gradient(135deg, #faf9ff 0%, #f4f1ff 100%)' }}>
+            <div style={{ width: '64px', height: '64px', display: 'grid', placeItems: 'center', marginBottom: '16px', borderRadius: '20px', background: 'linear-gradient(135deg, #7757e8, #9a69f5)', boxShadow: '0 10px 24px rgba(119, 87, 232, 0.24)', fontSize: '1.8rem' }}>📊</div>
+            <strong style={{ color: 'var(--text-main)', fontSize: '1.05rem' }}>No grades recorded yet.</strong>
+            <p style={{ maxWidth: '290px', margin: '8px 0 0', color: 'var(--text-muted)', lineHeight: 1.55, fontSize: '0.92rem' }}>{emptyMessage}</p>
+            {canAssignGrades && <button className="main-btn" style={{ width: 'auto', marginTop: '18px', padding: '10px 16px' }} onClick={() => setShowModal(true)}>+ Assign Grade</button>}
+          </div>
+        ) : grades.map(g => (
           <div key={g.id} className="task-item">
             <div className="task-info">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
