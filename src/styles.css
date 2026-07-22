@@ -2991,3 +2991,124 @@ textarea.main-input {
     word-break: break-word;
   }
 }
+
+/* =========================================================
+   FINAL MOBILE DIRECT MESSAGES FIX
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .messaging-container,
+  .dm-layout,
+  .dm-split,
+  .dm-chat,
+  .dm-sidebar,
+  .chat-messages,
+  .chat-input-row {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .messaging-container {
+    padding: 14px;
+    overflow-x: hidden;
+  }
+
+  .dm-layout {
+    overflow: hidden;
+  }
+
+  .dm-split {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  .dm-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-height: 150px;
+    flex: 0 0 auto;
+    overflow: hidden;
+  }
+
+  .student-list {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 5px;
+  }
+
+  .student-item {
+    min-width: 135px;
+    max-width: 170px;
+    flex: 0 0 auto;
+    overflow: hidden;
+  }
+
+  .student-item strong,
+  .student-item small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dm-chat {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .dm-header {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .dm-header strong,
+  .dm-header small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-messages {
+    padding: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .chat-bubble {
+    max-width: 86%;
+    min-width: 0;
+  }
+
+  .bubble-text {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .chat-input-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+
+  .chat-input-row input {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .chat-input-row .main-btn {
+    width: auto !important;
+    min-width: 62px;
+    padding: 0 12px !important;
+  }
+}
