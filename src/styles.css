@@ -2966,3 +2966,28 @@ textarea.main-input {
     min-height: 65px;
   }
 }
+
+@media (max-width: 768px) {
+  .messages-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .messages-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .conversation-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .message-bubble {
+    max-width: 82%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
