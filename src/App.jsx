@@ -113,8 +113,7 @@ function WorkspacePolish() {
       .page-heading p { font-size: .82rem; line-height: 1.4; max-width: 280px; }
       .topbar-actions .today-pill, .topbar-actions .topbar-profile { display: none; }
       .topbar-actions { width: 100%; justify-content: flex-start; }
-      .language-switcher { width: 100%; }
-      .language-switcher button { flex: 1; font-size: .78rem; }
+      .profile-language-switcher button { font-size: 1rem; }
       .page-surface { margin: 0 10px; border-radius: 20px; min-height: calc(100dvh - 230px); }
       .materials-container, .admin-panel { padding: 16px; }
       .materials-container > div:first-child { align-items: flex-start !important; }
@@ -631,10 +630,6 @@ export default function App() {
         <div className="auth-orb auth-orb-two" />
 
         <div className="auth-shell">
-          <div className="language-switcher" role="group" aria-label="Language selector" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", right: "max(12px, env(safe-area-inset-right))", zIndex: 20, display: "flex", gap: "6px", maxWidth: "calc(100vw - 24px)", flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px", whiteSpace: "nowrap" }} onClick={() => setLanguage("en")}>🇬🇧 English</button>
-            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px", whiteSpace: "nowrap" }} onClick={() => setLanguage("el")}>🇬🇷 Ελληνικά</button>
-          </div>
           <section className="auth-showcase">
             <div className="showcase-badge">Built for modern classrooms</div>
             <div className="showcase-logo">Scholar<span>Async</span></div>
@@ -985,10 +980,6 @@ export default function App() {
           </div>
 
           <div className="topbar-actions">
-            <div className="language-switcher" role="group" aria-label="Language selector" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-              <button type="button" className={language === "en" ? "select-all-btn" : "secondary-btn"} style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("en")}>🇬🇧 English</button>
-              <button type="button" className={language === "el" ? "select-all-btn" : "secondary-btn"} style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("el")}>🇬🇷 Ελληνικά</button>
-            </div>
             <div className="today-pill">
               <span>Today</span>
               <strong>{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}</strong>
@@ -1018,6 +1009,8 @@ export default function App() {
             onSave={handleSaveProfile}
             avatarUrl={googleAvatar}
             showError={showError}
+            language={language}
+            setLanguage={setLanguage}
           />
         ) : view === "admin" ? (
           <AdminPanel fetchProfile={() => fetchProfile(session?.user)} />
@@ -1613,6 +1606,8 @@ function ProfileView({
   onSave,
   avatarUrl,
   showError,
+  language,
+  setLanguage,
 }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef(null);
@@ -1685,6 +1680,66 @@ function ProfileView({
 
   return (
     <div className="profile-page">
+      <div
+        className="profile-language-switcher"
+        role="group"
+        aria-label="Language selector"
+        style={{
+          position: "fixed",
+          top: "50%",
+          right: "max(8px, env(safe-area-inset-right))",
+          transform: "translateY(-50%)",
+          zIndex: 50,
+          display: "flex",
+          flexDirection: "column",
+          gap: "5px",
+          padding: "5px",
+          borderRadius: "16px",
+          background: "rgba(255, 255, 255, 0.94)",
+          border: "1px solid rgba(124, 92, 246, 0.18)",
+          boxShadow: "0 8px 24px rgba(31, 22, 72, 0.16)",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Switch to English"
+          aria-pressed={language === "en"}
+          title="English"
+          onClick={() => setLanguage("en")}
+          style={{
+            width: "38px",
+            height: "38px",
+            padding: 0,
+            margin: 0,
+            borderRadius: "11px",
+            border: language === "en" ? "2px solid #7c5cf6" : "2px solid transparent",
+            background: language === "en" ? "#f0ecff" : "transparent",
+            cursor: "pointer",
+          }}
+        >
+          🇬🇧
+        </button>
+        <button
+          type="button"
+          aria-label="Αλλαγή στα Ελληνικά"
+          aria-pressed={language === "el"}
+          title="Ελληνικά"
+          onClick={() => setLanguage("el")}
+          style={{
+            width: "38px",
+            height: "38px",
+            padding: 0,
+            margin: 0,
+            borderRadius: "11px",
+            border: language === "el" ? "2px solid #7c5cf6" : "2px solid transparent",
+            background: language === "el" ? "#f0ecff" : "transparent",
+            cursor: "pointer",
+          }}
+        >
+          🇬🇷
+        </button>
+      </div>
       <section className="profile-hero-card">
         <div className="profile-cover" />
         <div className="profile-identity">
