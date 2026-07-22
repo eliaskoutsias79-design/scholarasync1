@@ -107,14 +107,15 @@ function WorkspacePolish() {
     .fc .fc-button { border-radius: 9px !important; border: 0 !important; box-shadow: none !important; }
     .fc .fc-daygrid-day-frame { min-height: 84px; }
     @media (max-width: 720px) {
-      .main-content { padding-bottom: 82px; }
-      .dashboard-topbar { padding: 16px 12px 12px; }
+      .dashboard-layout, .main-content { width: 100%; min-width: 0; box-sizing: border-box; }
+      .main-content { padding-bottom: 82px; overflow-x: hidden; }
+      .dashboard-topbar { width: 100%; box-sizing: border-box; padding: 16px 12px 12px; }
       .page-heading h1 { font-size: 1.35rem; }
       .page-heading p { font-size: .82rem; line-height: 1.4; max-width: 280px; }
       .topbar-actions .today-pill, .topbar-actions .topbar-profile { display: none; }
       .topbar-actions { width: 100%; justify-content: flex-start; }
       .profile-language-switcher button { font-size: 1rem; }
-      .page-surface { margin: 0 10px; border-radius: 20px; min-height: calc(100dvh - 230px); }
+      .page-surface { width: calc(100% - 20px); max-width: calc(100% - 20px); box-sizing: border-box; margin: 0 auto; border-radius: 20px; min-height: calc(100dvh - 230px); }
       .materials-container, .admin-panel { padding: 16px; }
       .materials-container > div:first-child { align-items: flex-start !important; }
       .materials-container > div:first-child .main-btn { width: 100% !important; }
