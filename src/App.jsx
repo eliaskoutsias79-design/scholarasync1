@@ -3,9 +3,81 @@ import MobileDashboard from "./mobile/MobileDashboard";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import elLocale from "@fullcalendar/core/locales/el";
 import { supabase } from "./supabaseClient";
 import "./styles.css";
 import useIsMobile from "./hooks/useIsMobile";
+
+// Lightweight, dependency-free translations. Add new UI copy here only.
+const translations = {
+  en: {},
+  el: {
+    "INITIALIZING SECURE SESSION...": "ΠΡΟΕΤΟΙΜΑΣΙΑ ΑΣΦΑΛΟΥΣ ΣΥΝΔΕΣΗΣ...",
+    "Built for modern classrooms": "Σχεδιασμένο για σύγχρονες τάξεις",
+    "Everything your class needs, in one calm workspace.": "Ό,τι χρειάζεται η τάξη σας, σε έναν οργανωμένο χώρο.",
+    "Assignments, announcements, materials, messages and grades—organized without the noise.": "Εργασίες, ανακοινώσεις, υλικό, μηνύματα και βαθμοί — όλα οργανωμένα.",
+    "One dashboard for students and teachers": "Ένας πίνακας για μαθητές και καθηγητές",
+    "Fast Google or email access": "Γρήγορη πρόσβαση με Google ή email",
+    "Secure approval before entering": "Ασφαλής έγκριση πριν την είσοδο",
+    "Welcome back": "Καλώς ήρθατε ξανά", "Create your account": "Δημιουργήστε λογαριασμό",
+    "Sign in to continue to your educational portal.": "Συνδεθείτε για να συνεχίσετε στην εκπαιδευτική σας πύλη.",
+    "Tell us who you are, then wait for administrator approval.": "Πείτε μας ποιοι είστε και περιμένετε την έγκριση του διαχειριστή.",
+    "Full name": "Ονοματεπώνυμο", "Student": "Μαθητής", "Teacher": "Καθηγητής", "Join your class": "Συνδεθείτε με την τάξη σας", "Manage classes": "Διαχείριση τάξεων",
+    "Class": "Τάξη", "Classes you teach": "Τάξεις που διδάσκετε", "Subjects": "Μαθήματα", "Email": "Email", "Password": "Κωδικός πρόσβασης",
+    "Your password": "Ο κωδικός σας", "Sign in": "Σύνδεση", "Request access": "Αίτημα πρόσβασης", "or continue with": "ή συνεχίστε με",
+    "New to ScholarAsync?": "Νέοι στο ScholarAsync;", "Create an account": "Δημιουργία λογαριασμού", "Already registered?": "Έχετε ήδη λογαριασμό;",
+    "Google account connected": "Ο λογαριασμός Google συνδέθηκε", "Complete your ScholarAsync profile before requesting access.": "Ολοκληρώστε το προφίλ σας πριν ζητήσετε πρόσβαση.",
+    "Choose your role": "Επιλέξτε ρόλο", "This controls the tools you will see after approval.": "Αυτό καθορίζει τα εργαλεία που θα βλέπετε μετά την έγκριση.",
+    "View assignments, materials, messages and grades": "Δείτε εργασίες, υλικό, μηνύματα και βαθμούς", "Post work, share resources and communicate": "Αναρτήστε εργασίες, μοιραστείτε υλικό και επικοινωνήστε",
+    "Select your class": "Επιλέξτε την τάξη σας", "Tell us what you teach": "Πείτε μας τι διδάσκετε", "Search and choose one class.": "Αναζητήστε και επιλέξτε μία τάξη.", "Use commas to separate multiple entries.": "Χρησιμοποιήστε κόμματα για πολλαπλές καταχωρίσεις.",
+    "Search classes...": "Αναζήτηση τάξεων...", "Choose your class": "Επιλέξτε την τάξη σας", "Signed in securely as": "Συνδεθήκατε με ασφάλεια ως", "Complete registration": "Ολοκλήρωση εγγραφής",
+    "Approval Pending": "Αναμονή έγκρισης", "Contact your administrator to verify your account.": "Επικοινωνήστε με τον διαχειριστή για επιβεβαίωση του λογαριασμού σας.", "Logout": "Αποσύνδεση",
+    "Classroom workspace": "Χώρος τάξης", "Calendar": "Ημερολόγιο", "Materials": "Υλικό", "Announcements": "Ανακοινώσεις", "Messages": "Μηνύματα", "Grades": "Βαθμοί", "Profile": "Προφίλ", "Admin": "Διαχειριστής", "Sign out": "Αποσύνδεση",
+    "Today": "Σήμερα", "Administrator": "Διαχειριστής", "Study Materials": "Εκπαιδευτικό υλικό", "Add Material": "Προσθήκη υλικού", "No materials uploaded yet.": "Δεν έχει αναρτηθεί υλικό ακόμη.", "Open": "Άνοιγμα",
+    "Post": "Ανάρτηση", "No announcements yet.": "Δεν υπάρχουν ανακοινώσεις ακόμη.", "Post Homework:": "Ανάρτηση εργασίας:", "Select Classes": "Επιλέξτε τάξεις", "Select All": "Επιλογή όλων", "Deselect All": "Αποεπιλογή όλων",
+    "-- Class --": "-- Τάξη --", "-- Subject --": "-- Μάθημα --", "Assignment Title": "Τίτλος εργασίας", "Cancel": "Ακύρωση", "Upload Material": "Ανάρτηση υλικού", "Title": "Τίτλος", "Subject": "Μάθημα", "Link (Drive/PDF)": "Σύνδεσμος (Drive/PDF)", "Upload": "Ανάρτηση",
+    "Post Announcement": "Ανάρτηση ανακοίνωσης", "Write your announcement here...": "Γράψτε την ανακοίνωσή σας εδώ...", "Due:": "Προθεσμία:", "Delete": "Διαγραφή", "Close": "Κλείσιμο",
+    "Class Chat": "Συνομιλία τάξης", "Direct Messages": "Άμεσα μηνύματα", "No messages yet. Say hello! 👋": "Δεν υπάρχουν μηνύματα ακόμη. Πείτε ένα γεια! 👋", "Type a message...": "Γράψτε ένα μήνυμα...", "Send": "Αποστολή", "Search students...": "Αναζήτηση μαθητών...", "No students found.": "Δεν βρέθηκαν μαθητές.", "Select a student to start chatting": "Επιλέξτε μαθητή για να ξεκινήσετε συνομιλία",
+    "YOUR TEACHERS": "ΟΙ ΚΑΘΗΓΗΤΕΣ ΣΑΣ", "No conversations yet.": "Δεν υπάρχουν συνομιλίες ακόμη.", "Select a conversation": "Επιλέξτε συνομιλία", "No messages yet.": "Δεν υπάρχουν μηνύματα ακόμη.", "Reply...": "Απάντηση...",
+    "Personal details": "Προσωπικά στοιχεία", "Edit your profile": "Επεξεργασία προφίλ", "Display name": "Εμφανιζόμενο όνομα", "Your name": "Το όνομά σας", "Profile picture": "Εικόνα προφίλ", "Uploading...": "Μεταφόρτωση...", "Upload image": "Μεταφόρτωση εικόνας", "Remove image": "Αφαίρεση εικόνας", "Bio": "Βιογραφικό", "Write a short introduction...": "Γράψτε μια σύντομη παρουσίαση...", "Saving...": "Αποθήκευση...", "Uploading image...": "Μεταφόρτωση εικόνας...", "Save changes": "Αποθήκευση αλλαγών", "Profile preview": "Προεπισκόπηση προφίλ", "Your bio will appear here once you add one.": "Το βιογραφικό σας θα εμφανιστεί εδώ μόλις προσθέσετε ένα.", "Not assigned": "Δεν έχει οριστεί", "Account status": "Κατάσταση λογαριασμού", "Approved": "Εγκρίθηκε", "Pending": "Σε αναμονή",
+    "User Management": "Διαχείριση χρηστών", "No Class Assigned": "Δεν έχει οριστεί τάξη", "Revoke Access": "Ανάκληση πρόσβασης", "Approve User": "Έγκριση χρήστη", "Loading grades...": "Φόρτωση βαθμών...", "Academic Records": "Ακαδημαϊκά στοιχεία", "Assign Grade": "Καταχώριση βαθμού", "No grades recorded yet.": "Δεν έχουν καταχωριστεί βαθμοί ακόμη.", "No teacher comments.": "Δεν υπάρχουν σχόλια καθηγητή.", "Assign New Grade": "Καταχώριση νέου βαθμού", "Select Student": "Επιλέξτε μαθητή", "Grade (e.g. A, 19, 95%)": "Βαθμός (π.χ. Α, 19, 95%)", "Comments (Optional)": "Σχόλια (προαιρετικά)", "Save Grade": "Αποθήκευση βαθμού",
+    "Workspace": "Χώρος εργασίας", "Resources": "Πόροι", "Updates": "Ενημερώσεις", "Communication": "Επικοινωνία", "Progress": "Πρόοδος", "Administration": "Διαχείριση", "Account": "Λογαριασμός",
+    "Assignments and deadlines for your class.": "Εργασίες και προθεσμίες για την τάξη σας.", "Plan assignments and keep every class on schedule.": "Οργανώστε εργασίες και κρατήστε κάθε τάξη στο πρόγραμμα.", "Keep notes, links and learning resources organized by class.": "Κρατήστε σημειώσεις, συνδέσμους και εκπαιδευτικούς πόρους οργανωμένους ανά τάξη.", "Share important classroom news without losing it in chat.": "Μοιραστείτε σημαντικά νέα της τάξης χωρίς να χάνονται στη συνομιλία.", "Class conversations and direct communication in one place.": "Συνομιλίες τάξης και άμεση επικοινωνία σε ένα μέρος.", "Review results, feedback and student progress.": "Δείτε αποτελέσματα, σχόλια και πρόοδο μαθητών.", "Review registration requests and control access.": "Ελέγξτε αιτήματα εγγραφής και διαχειριστείτε την πρόσβαση.", "Personalize how your account appears across ScholarAsync.": "Προσαρμόστε την εμφάνιση του λογαριασμού σας στο ScholarAsync."
+  }
+};
+
+let activeLanguage = "en";
+const greekToEnglish = Object.fromEntries(
+  Object.entries(translations.el).map(([english, greek]) => [greek, english])
+);
+const t = (key) => {
+  const dictionary = activeLanguage === "el" ? translations.el : greekToEnglish;
+  if (dictionary[key]) return dictionary[key];
+  return Object.keys(dictionary)
+    .sort((a, b) => b.length - a.length)
+    .reduce((text, source) => text.split(source).join(dictionary[source]), key);
+};
+
+const translateRenderedUI = (language) => {
+  activeLanguage = language;
+  const translateNode = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const value = node.nodeValue;
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      const translated = t(trimmed);
+      if (translated !== trimmed) node.nodeValue = value.replace(trimmed, translated);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE || ["SCRIPT", "STYLE"].includes(node.tagName)) return;
+    ["placeholder", "aria-label", "title"].forEach((attribute) => {
+      const value = node.getAttribute(attribute);
+      if (value) node.setAttribute(attribute, t(value));
+    });
+    node.childNodes.forEach(translateNode);
+  };
+  translateNode(document.body);
+};
 
 const ADMIN_EMAIL = "eliaskoutsias79@gmail.com";
 
@@ -44,6 +116,12 @@ function GoogleIcon() {
 }
 
 export default function App() {
+  const [language, setLanguage] = useState(() => {
+    const saved = localStorage.getItem("scholarAsyncLanguage");
+    return saved === "el" || saved === "en"
+      ? saved
+      : navigator.language?.toLowerCase().startsWith("el") ? "el" : "en";
+  });
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,6 +155,15 @@ export default function App() {
   const [newAnn, setNewAnn] = useState({ title: "", content: "", className: "" });
   const [annSelectedClasses, setAnnSelectedClasses] = useState([]);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  useEffect(() => {
+    activeLanguage = language;
+    localStorage.setItem("scholarAsyncLanguage", language);
+    const observer = new MutationObserver(() => translateRenderedUI(language));
+    translateRenderedUI(language);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [language]);
 
   const isAdmin = session?.user?.email === ADMIN_EMAIL;
   const googleAvatar = profile?.avatar_url || session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || "";
@@ -135,7 +222,7 @@ export default function App() {
   const activePage = pageMeta[view] || pageMeta.calendar;
 
   const showError = (msg) => {
-    setErrorMsg(msg);
+    setErrorMsg(t(msg));
     setTimeout(() => setErrorMsg(null), 4000);
   };
 
@@ -485,6 +572,10 @@ export default function App() {
         <div className="auth-orb auth-orb-two" />
 
         <div className="auth-shell">
+          <div className="language-switcher" role="group" aria-label="Language selector" style={{ position: "absolute", top: "20px", right: "20px", zIndex: 5, display: "flex", gap: "6px" }}>
+            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("en")}>🇬🇧 English</button>
+            <button type="button" className="secondary-btn" style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("el")}>🇬🇷 Ελληνικά</button>
+          </div>
           <section className="auth-showcase">
             <div className="showcase-badge">Built for modern classrooms</div>
             <div className="showcase-logo">Scholar<span>Async</span></div>
@@ -834,6 +925,10 @@ export default function App() {
           </div>
 
           <div className="topbar-actions">
+            <div className="language-switcher" role="group" aria-label="Language selector" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <button type="button" className={language === "en" ? "select-all-btn" : "secondary-btn"} style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("en")}>🇬🇧 English</button>
+              <button type="button" className={language === "el" ? "select-all-btn" : "secondary-btn"} style={{ width: "auto", margin: 0, padding: "8px 10px" }} onClick={() => setLanguage("el")}>🇬🇷 Ελληνικά</button>
+            </div>
             <div className="today-pill">
               <span>Today</span>
               <strong>{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}</strong>
@@ -931,6 +1026,8 @@ export default function App() {
             <FullCalendar
               plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
+              locale={language === "el" ? elLocale : undefined}
+              buttonText={{ today: t("Today"), month: language === "el" ? "Μήνας" : "Month", week: language === "el" ? "Εβδομάδα" : "Week", day: language === "el" ? "Ημέρα" : "Day" }}
               events={events}
               dateClick={(arg) => {
                 if ((profile?.role === "teacher" || isAdmin) && profile?.is_approved) {
