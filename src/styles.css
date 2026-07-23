@@ -2784,6 +2784,37 @@ textarea.main-input {
    ========================================================= */
 
 @media (max-width: 720px) {
+  /* Floating navigation + a safe scroll finish on every mobile page. */
+  .sidebar {
+    inset: auto 10px max(10px, env(safe-area-inset-bottom));
+    width: auto;
+    height: 64px;
+    min-height: 64px;
+    padding: 6px;
+    border: 1px solid rgba(255,255,255,.11);
+    border-radius: 22px;
+    background: rgba(16,17,29,.94);
+    box-shadow: 0 16px 38px rgba(15,16,30,.28);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .sidebar nav {
+    height: 100%;
+    align-items: stretch;
+  }
+
+  .sidebar nav button {
+    min-height: 0;
+    border-radius: 16px;
+  }
+
+  .main-content {
+    /* 64px nav + its 10px inset + a comfortable, tappable clearance. */
+    padding-bottom: calc(124px + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(124px + env(safe-area-inset-bottom));
+  }
+
   /* Give the page a little more breathing room */
   .main-content {
     padding-left: 10px;
@@ -2925,6 +2956,13 @@ textarea.main-input {
 }
 
 @media (max-width: 420px) {
+  .sidebar {
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    border-radius: 20px;
+  }
+
   .page-heading h1 {
     font-size: 1.42rem;
   }
