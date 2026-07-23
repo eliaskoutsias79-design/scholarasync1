@@ -1,4 +1,4 @@
-const CACHE_NAME = "scholarasync-v1";
+const CACHE_NAME = "scholarasync-v2";
 
 const APP_SHELL = [
   "/",
@@ -49,5 +49,47 @@ self.addEventListener("fetch", (event) => {
           return cachedResponse || caches.match("/");
         })
       )
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data?.json() || {};
+  } catch {
+    payload = { body: event.data?.text() || "You have a new ScholarAsync update." };
+  }
+
+  const title = payload.title || "ScholarAsync";
+  const options = {
+    body: payload.body || "You have a new notification.",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    tag: payload.tag || "scholarasync-update",
+    renotify: true,
+    data: {
+      url: payload.url || "/",
+      ...payload.data,
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || "/", self.location.origin).href;
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        const existing = clients.find((client) => client.url.startsWith(self.location.origin));
+        if (existing) {
+          existing.navigate(targetUrl);
+          return existing.focus();
+        }
+        return self.clients.openWindow(targetUrl);
+      })
   );
 });

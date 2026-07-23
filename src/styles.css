@@ -1,3 +1,4 @@
+
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap");
 
 :root {
@@ -3149,52 +3150,60 @@ textarea.main-input {
     padding: 0 12px !important;
   }
 }
-
-/* =========================================================
-   FINAL MOBILE NAV SAFE ZONE
-   Keeps page content physically clear of the floating pill.
-   ========================================================= */
-
-@media (max-width: 720px) {
-  .dashboard-layout::after {
-    content: "";
-    position: fixed;
-    z-index: 998;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: calc(94px + env(safe-area-inset-bottom));
-    background: var(--bg-main);
-    pointer-events: none;
-  }
-
-  .sidebar {
-    z-index: 999;
-    bottom: calc(18px + env(safe-area-inset-bottom));
-    height: 66px;
-    min-height: 66px;
-    padding: 6px;
-  }
-
-  .main-content {
-    padding-bottom: 16px;
-    scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom));
-  }
-
-  .main-content::after {
-    content: "";
-    display: block;
-    width: 100%;
-    height: calc(112px + env(safe-area-inset-bottom));
-    flex: 0 0 calc(112px + env(safe-area-inset-bottom));
-    pointer-events: none;
-  }
+.push-notification-control {
+  position: relative;
 }
 
-@media (max-width: 420px) {
-  .sidebar {
-    right: 8px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
-    left: 8px;
+.notification-toggle {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid rgba(119, 87, 232, 0.18);
+  border-radius: 14px;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.notification-toggle.enabled {
+  color: #5c3fc0;
+  background: #f1edff;
+}
+
+.notification-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.push-notification-message {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(280px, 78vw);
+  padding: 10px 12px;
+  border: 1px solid #e4defb;
+  border-radius: 12px;
+  color: var(--text-main);
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(31, 22, 72, 0.14);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .notification-toggle {
+    width: 42px;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .notification-toggle > span:last-child {
+    display: none;
   }
 }

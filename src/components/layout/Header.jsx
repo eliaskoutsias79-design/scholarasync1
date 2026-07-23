@@ -1,3 +1,5 @@
+import NotificationToggle from "../NotificationToggle";
+
 export default function Header({
   activePage,
   profile,
@@ -19,6 +21,7 @@ export default function Header({
       </div>
 
       <div className="topbar-actions">
+        <NotificationToggle userId={profile?.id} />
         <div className="today-pill">
           <span>Today</span>
           <strong>

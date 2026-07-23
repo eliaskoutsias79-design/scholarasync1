@@ -44,6 +44,13 @@ const eventFromAssignment = (assignment) => ({
   color: assignment.subject === "Math" ? "#6366f1" : "#10b981",
 });
 
+const initialView = () => {
+  const requested = new URLSearchParams(window.location.search).get("view");
+  const aliases = { "study-groups": "studyGroups" };
+  const view = aliases[requested] || requested;
+  return PAGE_META[view] ? view : "calendar";
+};
+
 export default function useScholarAsyncApp() {
   const { language, setLanguage, t } = useLanguage();
   const [session, setSession] = useState(null);
@@ -53,7 +60,7 @@ export default function useScholarAsyncApp() {
   const [events, setEvents] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
-  const [view, setView] = useState("calendar");
+  const [view, setView] = useState(initialView);
   const [authMode, setAuthMode] = useState("login");
   const [authData, setAuthData] = useState(INITIAL_AUTH_DATA);
   const [classSearch, setClassSearch] = useState("");
