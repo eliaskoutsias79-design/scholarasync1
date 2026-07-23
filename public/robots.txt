@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://scholarasync.vercel.app/sitemap.xml
