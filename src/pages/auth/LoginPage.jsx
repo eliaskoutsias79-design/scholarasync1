@@ -8,7 +8,10 @@ export default function LoginPage({
   setAuthData,
   onAuth,
   onGoogleLogin,
+  onForgotPassword,
 }) {
+  const isForgotPassword = authMode === "forgot";
+
   return (
     <div className="auth-container glow-auth">
       <div className="auth-orb auth-orb-one" />
@@ -38,11 +41,19 @@ export default function LoginPage({
             <div className="text-logo">
               Scholar<span>Async</span>
             </div>
-            <h2>{authMode === "login" ? "Welcome back" : "Create your account"}</h2>
+            <h2>
+              {isForgotPassword
+                ? "Reset your password"
+                : authMode === "login"
+                  ? "Welcome back"
+                  : "Create your account"}
+            </h2>
             <p className="auth-subtitle">
-              {authMode === "login"
-                ? "Sign in to continue to your educational portal."
-                : "Tell us who you are, then wait for administrator approval."}
+              {isForgotPassword
+                ? "Enter your email and we’ll send you a secure recovery link."
+                : authMode === "login"
+                  ? "Sign in to continue to your educational portal."
+                  : "Tell us who you are, then wait for administrator approval."}
             </p>
           </div>
 
@@ -147,38 +158,71 @@ export default function LoginPage({
               />
             </label>
 
-            <label className="field-label">
-              Password
-              <input
-                className="glow-input"
-                type="password"
-                placeholder="Your password"
-                value={authData.password}
-                onChange={(event) =>
-                  setAuthData({ ...authData, password: event.target.value })
-                }
-                onKeyDown={(event) => event.key === "Enter" && onAuth()}
-              />
-            </label>
+            {!isForgotPassword && (
+              <>
+                <label className="field-label">
+                  Password
+                  <input
+                    className="glow-input"
+                    type="password"
+                    placeholder="Your password"
+                    value={authData.password}
+                    onChange={(event) =>
+                      setAuthData({ ...authData, password: event.target.value })
+                    }
+                    onKeyDown={(event) => event.key === "Enter" && onAuth()}
+                  />
+                </label>
 
-            <button className="main-btn glow-primary-btn" onClick={onAuth}>
-              {authMode === "login" ? "Sign in" : "Request access"}
+                {authMode === "login" && (
+                  <button
+                    type="button"
+                    className="forgot-password-link"
+                    onClick={() => setAuthMode("forgot")}
+                  >
+                    Forgot your password?
+                  </button>
+                )}
+              </>
+            )}
+
+            <button
+              className="main-btn glow-primary-btn"
+              onClick={isForgotPassword ? onForgotPassword : onAuth}
+            >
+              {isForgotPassword
+                ? "Send recovery link"
+                : authMode === "login"
+                  ? "Sign in"
+                  : "Request access"}
             </button>
 
-            <div className="auth-divider"><span>or continue with</span></div>
+            {!isForgotPassword && (
+              <>
+                <div className="auth-divider"><span>or continue with</span></div>
 
-            <button className="google-login-btn" onClick={onGoogleLogin}>
-              <GoogleIcon />
-              <span>Google</span>
-            </button>
+                <button className="google-login-btn" onClick={onGoogleLogin}>
+                  <GoogleIcon />
+                  <span>Google</span>
+                </button>
+              </>
+            )}
 
             <p
               className="auth-toggle"
-              onClick={() =>
-                setAuthMode(authMode === "login" ? "signup" : "login")
-              }
+              onClick={() => {
+                setAuthMode(
+                  isForgotPassword
+                    ? "login"
+                    : authMode === "login"
+                      ? "signup"
+                      : "login"
+                );
+              }}
             >
-              {authMode === "login" ? (
+              {isForgotPassword ? (
+                <>Remembered it? <strong>Back to sign in</strong></>
+              ) : authMode === "login" ? (
                 <>New to ScholarAsync? <strong>Create an account</strong></>
               ) : (
                 <>Already registered? <strong>Sign in</strong></>
