@@ -3241,3 +3241,27 @@ textarea.main-input {
     display: none;
   }
 }
+/* FINAL SIDEBAR VISIBILITY RULES — keep at bottom */
+@media screen and (min-width: 721px) {
+  .sidebar .mobile-navigation {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .sidebar .desktop-navigation {
+    display: block !important;
+    visibility: visible !important;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  .sidebar .desktop-navigation {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .sidebar .mobile-navigation {
+    display: grid !important;
+    visibility: visible !important;
+  }
+}
