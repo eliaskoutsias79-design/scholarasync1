@@ -21,15 +21,18 @@ import {
 } from "../services/classroomService";
 import {
   getCurrentSession,
+  sendPasswordResetEmail,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
+  updatePassword,
 } from "../services/authService";
 import {
   getProfile,
   updateProfile,
   upsertProfile,
 } from "../services/profileService";
+import { registerAndroidNotificationBridge } from "../services/androidNotifications";
 import { formatClassName, parseCommaList } from "../utils/classes";
 
 const eventFromAssignment = (assignment) => ({
@@ -62,6 +65,7 @@ export default function useScholarAsyncApp() {
   const [announcements, setAnnouncements] = useState([]);
   const [view, setView] = useState(initialView);
   const [authMode, setAuthMode] = useState("login");
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [authData, setAuthData] = useState(INITIAL_AUTH_DATA);
   const [classSearch, setClassSearch] = useState("");
   const [profileDraft, setProfileDraft] = useState(INITIAL_PROFILE_DRAFT);
@@ -260,7 +264,14 @@ export default function useScholarAsyncApp() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+        setSession(currentSession);
+        setLoading(false);
+        return;
+      }
+
       setSession(currentSession);
       if (currentSession?.user) {
         setLoading(true);
@@ -288,6 +299,11 @@ export default function useScholarAsyncApp() {
       bio: profile.bio || "",
     });
   }, [profile]);
+
+  useEffect(
+    () => registerAndroidNotificationBridge(session?.user?.id),
+    [session?.user?.id]
+  );
 
   const handleAuth = async () => {
     const {
@@ -339,6 +355,38 @@ export default function useScholarAsyncApp() {
   const handleGoogleLogin = async () => {
     const { error } = await signInWithGoogle();
     if (error) showError("Google authentication failed: " + error.message);
+  };
+
+  const handleForgotPassword = async () => {
+    const email = authData.email.trim();
+    if (!email) {
+      showError("Enter your email address first.");
+      return;
+    }
+
+    const { error } = await sendPasswordResetEmail(email);
+    if (error) {
+      showError("Could not send the recovery email: " + error.message);
+      return;
+    }
+
+    window.alert(
+      "Recovery email sent. Open the link in that email to choose a new password."
+    );
+    setAuthMode("login");
+  };
+
+  const handleResetPassword = async (password) => {
+    const { error } = await updatePassword(password);
+    if (error) return { ok: false, message: error.message };
+
+    await supabase.auth.signOut();
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setIsPasswordRecovery(false);
+    setAuthMode("login");
+    setAuthData((current) => ({ ...current, password: "" }));
+    window.alert("Password updated successfully. You can now sign in.");
+    return { ok: true };
   };
 
   const handlePostGoogleOnboarding = async () => {
@@ -553,6 +601,7 @@ export default function useScholarAsyncApp() {
     setView,
     authMode,
     setAuthMode,
+    isPasswordRecovery,
     authData,
     setAuthData,
     classSearch,
@@ -571,6 +620,8 @@ export default function useScholarAsyncApp() {
     fetchProfile,
     handleAuth,
     handleGoogleLogin,
+    handleForgotPassword,
+    handleResetPassword,
     handlePostGoogleOnboarding,
     handleSaveProfile,
     handlePostHomework,
