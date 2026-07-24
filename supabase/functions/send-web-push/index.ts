@@ -1,7 +1,81 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
+import { importPKCS8, SignJWT } from "npm:jose@5.9.6";
 
 const corsHeaders = { "Content-Type": "application/json" };
+
+let cachedGoogleToken: { value: string; expiresAt: number } | null = null;
+
+async function getGoogleAccessToken() {
+  if (cachedGoogleToken && cachedGoogleToken.expiresAt > Date.now() + 60_000) {
+    return cachedGoogleToken.value;
+  }
+
+  const serviceAccount = JSON.parse(
+    Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON") || ""
+  );
+  const now = Math.floor(Date.now() / 1000);
+  const key = await importPKCS8(serviceAccount.private_key, "RS256");
+  const assertion = await new SignJWT({
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+  })
+    .setProtectedHeader({ alg: "RS256", typ: "JWT" })
+    .setIssuer(serviceAccount.client_email)
+    .setSubject(serviceAccount.client_email)
+    .setAudience(serviceAccount.token_uri)
+    .setIssuedAt(now)
+    .setExpirationTime(now + 3600)
+    .sign(key);
+
+  const response = await fetch(serviceAccount.token_uri, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  if (!response.ok) throw new Error(`Google OAuth failed: ${await response.text()}`);
+
+  const data = await response.json();
+  cachedGoogleToken = {
+    value: data.access_token,
+    expiresAt: Date.now() + Number(data.expires_in || 3600) * 1000,
+  };
+  return cachedGoogleToken.value;
+}
+
+async function sendFcm(
+  token: string,
+  payload: { title: string; body: string; url: string; tag: string }
+) {
+  const serviceAccount = JSON.parse(
+    Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON") || ""
+  );
+  const accessToken = await getGoogleAccessToken();
+  return fetch(
+    `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: {
+          token,
+          data: {
+            title: payload.title,
+            body: payload.body,
+            url: payload.url,
+            tag: payload.tag,
+          },
+          android: { priority: "high" },
+        },
+      }),
+    }
+  );
+}
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") {
@@ -95,7 +169,8 @@ Deno.serve(async (request) => {
       Deno.env.get("VAPID_PRIVATE_KEY")!
     );
 
-    const payload = JSON.stringify({ title, body, url, tag });
+    const notificationPayload = { title, body, url, tag };
+    const payload = JSON.stringify(notificationPayload);
     let delivered = 0;
 
     await Promise.all(
@@ -121,6 +196,37 @@ Deno.serve(async (request) => {
             return;
           }
           console.error("Push delivery failed", pushError);
+        }
+      })
+    );
+
+    const { data: androidTokens, error: androidTokenError } = await supabase
+      .from("android_push_tokens")
+      .select("id, token")
+      .in("user_id", [...recipients]);
+    if (androidTokenError) throw androidTokenError;
+
+    await Promise.all(
+      (androidTokens || []).map(async ({ id, token }) => {
+        try {
+          const response = await sendFcm(token, notificationPayload);
+          if (response.ok) {
+            delivered += 1;
+            return;
+          }
+
+          const failure = await response.text();
+          if (
+            response.status === 404 ||
+            failure.includes("UNREGISTERED") ||
+            failure.includes("INVALID_ARGUMENT")
+          ) {
+            await supabase.from("android_push_tokens").delete().eq("id", id);
+            return;
+          }
+          console.error("FCM delivery failed", response.status, failure);
+        } catch (fcmError) {
+          console.error("FCM delivery failed", fcmError);
         }
       })
     );
