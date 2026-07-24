@@ -3450,3 +3450,17 @@ textarea.main-input {
     padding-left: 13px;
   }
 }
+
+.sidebar .mobile-navigation {
+  display: none !important;
+}
+
+@media (max-width: 720px) {
+  .sidebar .desktop-navigation {
+    display: none !important;
+  }
+
+  .sidebar .mobile-navigation {
+    display: grid !important;
+  }
+}
