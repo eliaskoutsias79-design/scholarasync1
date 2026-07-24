@@ -453,6 +453,40 @@ select option,
   color: #c4beff;
 }
 
+.forgot-password-link {
+  align-self: flex-end;
+  margin-top: -4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a9a2ff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.forgot-password-link:hover {
+  color: #c9c5ff;
+  text-decoration: underline;
+}
+
+.reset-password-shell {
+  grid-template-columns: minmax(320px, 520px);
+  justify-content: center;
+}
+
+.password-reset-message {
+  margin: -2px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 10px;
+  background: rgba(127, 29, 29, 0.2);
+  color: #fecaca;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .onboarding-card {
   position: relative;
   z-index: 1;
@@ -3205,262 +3239,5 @@ textarea.main-input {
 
   .notification-toggle > span:last-child {
     display: none;
-  }
-}
-
-/* =========================================================
-   MOBILE NAVIGATION — 5 PRIMARY ITEMS + MORE
-   Desktop navigation remains unchanged.
-   ========================================================= */
-
-.mobile-navigation,
-.mobile-more-backdrop {
-  display: none;
-}
-
-@media (max-width: 720px) {
-  body.mobile-nav-sheet-open {
-    overflow: hidden;
-  }
-
-  .sidebar .desktop-navigation {
-    display: none !important;
-  }
-
-  .sidebar .mobile-navigation {
-    width: 100%;
-    height: 100%;
-    display: grid !important;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    align-items: stretch;
-    gap: 3px;
-  }
-
-  .sidebar .mobile-navigation button {
-    width: 100%;
-    min-width: 0;
-    min-height: 0;
-    padding: 4px 2px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    border: 0;
-    border-radius: 13px;
-    color: #979caf;
-    background: transparent;
-    cursor: pointer;
-    font-size: clamp(.45rem, 1.8vw, .56rem);
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
-  }
-
-  .sidebar .mobile-navigation button > span:last-child {
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .sidebar .mobile-navigation button.active {
-    color: #fff;
-    background: linear-gradient(
-      135deg,
-      rgba(114, 103, 240, .98),
-      rgba(151, 96, 228, .94)
-    );
-    box-shadow: 0 7px 18px rgba(114, 103, 240, .25);
-  }
-
-  .sidebar .mobile-navigation button.active::after {
-    display: none;
-  }
-
-  .sidebar .mobile-navigation .icon-span {
-    width: 28px;
-    height: 26px;
-    display: grid;
-    place-items: center;
-    border-radius: 9px;
-    font-size: .88rem;
-  }
-
-  .mobile-more-backdrop {
-    position: fixed;
-    z-index: 1200;
-    inset: 0;
-    padding:
-      16px
-      12px
-      calc(88px + env(safe-area-inset-bottom));
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    background: rgba(10, 11, 20, .46);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    animation: mobile-more-fade-in .18s ease both;
-  }
-
-  .mobile-more-sheet {
-    width: min(100%, 460px);
-    max-height: min(66svh, 470px);
-    padding: 8px 16px 18px;
-    overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, .76);
-    border-radius: 25px;
-    color: var(--text-main);
-    background: rgba(255, 255, 255, .97);
-    box-shadow: 0 28px 70px rgba(9, 10, 22, .28);
-    animation: mobile-more-slide-in .22s cubic-bezier(.2, .8, .2, 1) both;
-  }
-
-  .mobile-more-handle {
-    width: 42px;
-    height: 4px;
-    margin: 1px auto 12px;
-    border-radius: 999px;
-    background: #d8dae5;
-  }
-
-  .mobile-more-header {
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .mobile-more-header small {
-    display: block;
-    margin-bottom: 2px;
-    color: var(--primary);
-    font-size: .62rem;
-    font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-  }
-
-  .mobile-more-header h2 {
-    margin: 0;
-    font-family: "Manrope", "Inter", sans-serif;
-    font-size: 1.25rem;
-    letter-spacing: -.035em;
-  }
-
-  .mobile-more-close {
-    width: 38px;
-    height: 38px;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text-muted);
-    background: var(--surface-soft);
-    cursor: pointer;
-    font-size: 1.35rem;
-    line-height: 1;
-  }
-
-  .mobile-more-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .mobile-more-grid button {
-    min-width: 0;
-    min-height: 74px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    color: var(--text-main);
-    background: var(--surface-soft);
-    cursor: pointer;
-    font-size: .78rem;
-    font-weight: 750;
-    text-align: left;
-  }
-
-  .mobile-more-grid button.active {
-    border-color: rgba(114, 103, 240, .22);
-    color: #574cc4;
-    background: var(--primary-soft);
-    box-shadow: inset 0 0 0 1px rgba(114, 103, 240, .05);
-  }
-
-  .mobile-more-icon {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border-radius: 13px;
-    background: #fff;
-    box-shadow: var(--shadow-sm);
-    font-size: 1.08rem;
-  }
-
-  .mobile-more-grid .mobile-more-signout {
-    border-color: rgba(239, 93, 114, .15);
-    color: #d94c63;
-    background: rgba(239, 93, 114, .07);
-  }
-
-  @keyframes mobile-more-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes mobile-more-slide-in {
-    from {
-      opacity: 0;
-      transform: translateY(18px) scale(.985);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-}
-
-@media (max-width: 380px) {
-  .sidebar .mobile-navigation {
-    gap: 1px;
-  }
-
-  .sidebar .mobile-navigation button {
-    padding-inline: 1px;
-    font-size: .43rem;
-  }
-
-  .mobile-more-backdrop {
-    padding-right: 9px;
-    padding-left: 9px;
-  }
-
-  .mobile-more-sheet {
-    padding-right: 13px;
-    padding-left: 13px;
-  }
-}
-
-.sidebar .mobile-navigation {
-  display: none !important;
-}
-
-@media (max-width: 720px) {
-  .sidebar .desktop-navigation {
-    display: none !important;
-  }
-
-  .sidebar .mobile-navigation {
-    display: grid !important;
   }
 }

@@ -8,12 +8,17 @@ import ApprovalPending from "./pages/auth/ApprovalPending";
 import GoogleOnboarding from "./pages/auth/GoogleOnboarding";
 import LoadingScreen from "./pages/auth/LoadingScreen";
 import LoginPage from "./pages/auth/LoginPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 
 export default function ScholarAsync() {
   const app = useScholarAsyncApp();
 
   if (!app.isReady || app.loading) {
     return <LoadingScreen />;
+  }
+
+  if (app.isPasswordRecovery) {
+    return <ResetPasswordPage onResetPassword={app.handleResetPassword} />;
   }
 
   if (!app.session) {
@@ -25,6 +30,7 @@ export default function ScholarAsync() {
         setAuthData={app.setAuthData}
         onAuth={app.handleAuth}
         onGoogleLogin={app.handleGoogleLogin}
+        onForgotPassword={app.handleForgotPassword}
       />
     );
   }
