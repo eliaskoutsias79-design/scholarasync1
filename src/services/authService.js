@@ -25,4 +25,12 @@ export const signInWithGoogle = () =>
     },
   });
 
+export const sendPasswordResetEmail = (email) =>
+  supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  });
+
+export const updatePassword = (password) =>
+  supabase.auth.updateUser({ password });
+
 export const signOut = () => supabase.auth.signOut();
